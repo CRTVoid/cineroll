@@ -1,7 +1,6 @@
 {
   "name": "Cineroll",
   "short_name": "Cineroll",
-  "description": "Cinema randomizer",
   "start_url": "index.html",
   "display": "standalone",
   "orientation": "portrait",
