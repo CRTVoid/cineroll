@@ -667,12 +667,25 @@
             
             if (confirm("Вернуть этот фильм в активный список сейчас?")) {
                 try {
+                    // 1. Обновляем фильм в основной коллекции
                     await db.collection('movies').doc(movieId).update({
                         isActive: true,
                         postponedUntil: null
                     });
                     
-                    // Обновляем списки
+                    // 2. Удаляем все записи об этом фильме из postponedMovies
+                    const postponedSnapshot = await db.collection('postponedMovies')
+                        .where('movieId', '==', movieId)
+                        .where('returned', '==', false)
+                        .get();
+                    
+                    if (!postponedSnapshot.empty) {
+                        postponedSnapshot.forEach(async (doc) => {
+                            await db.collection('postponedMovies').doc(doc.id).delete();
+                        });
+                    }
+                    
+                    // 3. Обновляем списки
                     loadMovieList();
                     loadPostponedMovies();
                     
@@ -680,6 +693,7 @@
                     
                 } catch (error) {
                     alert("Ошибка возврата фильма: " + error.message);
+                    console.error("Ошибка возврата фильма:", error);
                 }
             }
         }
@@ -721,10 +735,23 @@
                 
                 // Обновляем все фильмы, которые пора вернуть
                 for (const update of updates) {
+                    // 1. Обновляем фильм в основной коллекции
                     await db.collection('movies').doc(update.id).update({
                         isActive: true,
                         postponedUntil: null
                     });
+                    
+                    // 2. Удаляем все записи об этом фильме из postponedMovies
+                    const postponedSnapshot = await db.collection('postponedMovies')
+                        .where('movieId', '==', update.id)
+                        .where('returned', '==', false)
+                        .get();
+                    
+                    if (!postponedSnapshot.empty) {
+                        postponedSnapshot.forEach(async (doc) => {
+                            await db.collection('postponedMovies').doc(doc.id).delete();
+                        });
+                    }
                 }
                 
                 alert(`Возвращено ${count} фильм(ов) в активный список!`);
@@ -748,9 +775,24 @@
             
             if (confirm("Удалить этот фильм из списка?")) {
                 try {
+                    // Удаляем фильм из основной коллекции
                     await db.collection('movies').doc(movieId).delete();
-                    loadMovieList(); // Обновляем список активных
-                    loadPostponedMovies(); // Обновляем список отложенных
+                    
+                    // Также удаляем все записи об этом фильме из postponedMovies
+                    const postponedSnapshot = await db.collection('postponedMovies')
+                        .where('movieId', '==', movieId)
+                        .get();
+                    
+                    if (!postponedSnapshot.empty) {
+                        postponedSnapshot.forEach(async (doc) => {
+                            await db.collection('postponedMovies').doc(doc.id).delete();
+                        });
+                    }
+                    
+                    // Обновляем списки
+                    loadMovieList();
+                    loadPostponedMovies();
+                    
                 } catch (error) {
                     alert("Ошибка удаления: " + error.message);
                 }
