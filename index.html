@@ -447,7 +447,7 @@
                     returned: false
                 });
                 
-                alert(`Фильм "${movieTitle}" отложен на 24 часа!\nБудет доступен снова: ${returnTime.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})} ${returnTime.toLocaleDateString('ru-RU')}`);
+                // alert(`Фильм "${movieTitle}" отложен на 24 часа!\nБудет доступен снова: ${returnTime.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})} ${returnTime.toLocaleDateString('ru-RU')}`);
                 
                 // 3. Показываем следующий случайный фильм
                 await getRandomMovie();
@@ -689,7 +689,7 @@
                     loadMovieList();
                     loadPostponedMovies();
                     
-                    alert("Фильм возвращен в активный список!");
+                    // alert("Фильм возвращен в активный список!");
                     
                 } catch (error) {
                     alert("Ошибка возврата фильма: " + error.message);
@@ -948,3 +948,4 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
