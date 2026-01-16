@@ -168,7 +168,9 @@
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
-        display: flex;
+        display: flex !important;
+        flex-wrap: nowrap !important; /* Не переносить на новую строку */
+        white-space: nowrap !important; /* Не переносить текст */
         align-items: center;
         justify-content: center;
         gap: 8px;
@@ -211,7 +213,7 @@
         font-size: 0.9em;
         color: #666;
     }
-        }
+}
     </style>
 </head>
 <body>
@@ -336,29 +338,28 @@
         
         // Создаем HTML с кнопками
         resultDiv.innerHTML = `
-            <div style="animation: fadeIn 0.5s;">
-                <div style="font-family: Nunito; font-weight: 900; font-size: 2.3em;" class="movie-title">${randomMovie.title}</div>
-                <div class="action-buttons">
-                    <a href="${kinopoiskUrl}" 
-                       target="_blank" 
-                       class="action-btn kinopoisk-btn"
-                       onclick="trackAction('kinopoisk', '${randomMovie.title.replace(/'/g, "\\'")}')">
-                        КиноПоиск
-                    </a>
-                    
-                    <a href="${vkSearchUrl}" 
-                       target="_blank" 
-                       class="action-btn vk-watch-btn"
-                       onclick="trackAction('vk_watch', '${randomMovie.title.replace(/'/g, "\\'")}')">
-                        Смотреть в VK
-                    </a>
-                </div>
-                
-                <div style="margin-top: 15px; font-size: 0.8em; color: #999; text-align: center;">
-                    Содержимое откроется в новой вкладке, приятного просмотра
-                </div>
-            </div>
-        `;
+    <div style="animation: fadeIn 0.5s;">
+        <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${randomMovie.title}</div>
+        <div class="action-buttons">
+            <button 
+               class="kinopoisk-btn"
+               onclick="window.open('${kinopoiskUrl}', '_blank', 'noopener,noreferrer'); trackAction('kinopoisk', '${randomMovie.title.replace(/'/g, "\\'")}')"
+               style="padding: 16px 24px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 700; border: 1px solid white; background: none; color: white; cursor: pointer; margin: 5px;">
+                КиноПоиск
+            </button>
+            
+            <button 
+               class="action-btn vk-watch-btn"
+               onclick="window.open('${vkSearchUrl}', '_blank', 'noopener,noreferrer'); trackAction('vk_watch', '${randomMovie.title.replace(/'/g, "\\'")}')"
+               style="padding: 16px 24px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 700; border: 1px solid white; background: none; color: white; cursor: pointer; margin: 5px;">
+                VK
+            </button>
+        </div>
+        <div style="margin-top: 15px; font-size: 0.8em; color: #999; text-align: center;">
+            Содержимое откроется в новой вкладке, приятного просмотра
+        </div>
+    </div>
+`;
         
         // Удаляем фильм из базы
         await db.collection('movies').doc(randomMovie.id).delete();
