@@ -116,7 +116,7 @@
         }
         .movie-list-container {
             margin-top: 25px;
-            display: none;
+            display: none; /* Начальное состояние - скрыт */
         }
         .movie-item {
             display: flex;
@@ -141,6 +141,62 @@
         .delete-btn:hover {
             background: #c82333;
         }
+        
+        /* НОВЫЕ СТИЛИ ДЛЯ КНОПКИ "СМОТРЕТЬ ПОЗЖЕ" */
+        .postpone-btn {
+            background: none;
+            color: white;
+            border: solid 1px white;
+            font-weight: 700;
+            font-family: Nunito;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        /* СТИЛИ ДЛЯ ВКЛАДКИ ОТЛОЖЕННЫХ ФИЛЬМОВ */
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 50px;
+            font-family: Nunito;
+            font-weight: 700;
+            cursor: pointer;
+            background: #333;
+            color: #fff;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: #4e8387ff;
+            color: #1a1a1aff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .postponed-badge {
+            display: inline-block;
+            background: #FFA500;
+            color: #1a1a1aff;
+            font-size: 0.7em;
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -162,56 +218,20 @@
     }
 
     .action-btn {
-        padding: 14px 24px;
+        padding: 12px 24px;
         border: none;
         border-radius: 10px;
         font-size: 16px;
-        font-weight: 700;
+        font-weight: 600;
         cursor: pointer;
         display: flex !important;
-        flex-wrap: nowrap !important; /* Не переносить на новую строку */
-        white-space: nowrap !important; /* Не переносить текст */
+        flex-wrap: nowrap !important;
+        white-space: nowrap !important;
         align-items: center;
         justify-content: center;
         gap: 8px;
         transition: all 0.3s ease;
         text-decoration: none;
-    }
-
-    /* .kinopoisk-btn {
-        background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-        color: white;
-        flex: 1;
-        max-width: 200px;
-    }
-
-    .kinopoisk-btn:hover {
-        background: linear-gradient(135deg, #FF5252, #FF7B3D);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
-    }
-
-    .vk-watch-btn {
-        background: linear-gradient(135deg, #4A76A8, #5E81A8);
-        color: white;
-        flex: 1;
-        max-width: 200px;
-    }
-
-    .vk-watch-btn:hover {
-        background: linear-gradient(135deg, #3B5998, #4A6FA5);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(74, 118, 168, 0.3);
-    } */
-
-    .action-btn i {
-        font-size: 18px;
-    }
-
-    .movie-info {
-        margin: 15px 0;
-        font-size: 0.9em;
-        color: #666;
     }
 }
     </style>
@@ -244,21 +264,25 @@
             Показать список фильмов
         </button>
 
+        <div class="tab-buttons" id="tab-buttons" style="display: none;">
+            <button class="tab-btn active" data-tab="active">Активные фильмы</button>
+            <button class="tab-btn" data-tab="postponed">Отложенные</button>
+        </div>
+
         <div class="movie-list-container" id="movies-list-container">
-            <h3 style="text-align: center; margin-bottom: 20px; font-family: Nunito; color: #fffaffff;">
-                Все фильмы в списке
-            </h3>
-            <ul id="movies-list" style="list-style: none; padding: 0;">
-                <!-- Список фильмов загрузится здесь -->
-            </ul>
+            <div class="tab-content active" id="active-movies-tab">
+                <ul id="movies-list" style="list-style: none; padding: 0;">
+                    <!-- Список активных фильмов загрузится здесь -->
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="postponed-movies-tab">
+                <ul id="postponed-list" style="list-style: none; padding: 0;">
+                    <!-- Список отложенных фильмов загрузится здесь -->
+                </ul>
+            </div>
         </div>
     </div>
-
-<!--
-    <div class="nav-footer">
-        <a href="add.html" class="nav-link">Добавить фильм</a>
-    </div>
--->
 
     <!-- Firebase SDK -->
     <!-- ВАЖНО: Используйте ЭТУ версию -->
@@ -278,6 +302,7 @@
 
         // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         let db = null;
+        let currentRandomMovie = null;
         
         // ========== ИНИЦИАЛИЗАЦИЯ FIREBASE ==========
         function initFirebase() {
@@ -296,85 +321,150 @@
 
         // ========== ПОЛУЧИТЬ СЛУЧАЙНЫЙ ФИЛЬМ ==========
         async function getRandomMovie() {
-    if (!db) {
-        showError("Ошибка подключения к базе данных");
-        return;
-    }
-    
-    const loading = document.getElementById('loading');
-    const resultDiv = document.getElementById('result');
-    
-    loading.style.display = 'block';
-    resultDiv.innerHTML = '';
-    
-    try {
-        const snapshot = await db.collection('movies').get();
-        
-        if (snapshot.empty) {
-            resultDiv.innerHTML = `
-                <div style="color: #6c757d; padding: 30px;">
-                    <h3 style="color: #dc3545;">Список пуст!</h3>
-                    <p>Добавьте фильмы через "Добавить фильм" внизу</p>
-                </div>
-            `;
-            return;
-        }
-        
-        const movies = [];
-        snapshot.forEach(doc => {
-            movies.push({
-                id: doc.id,
-                title: doc.data().title,
-                added: doc.data().createdAt?.toDate() || new Date()
-            });
-        });
-        
-        const randomIndex = Math.floor(Math.random() * movies.length);
-        const randomMovie = movies[randomIndex];
-        
-        // Формируем URL для поиска
-        const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(randomMovie.title)}`;
-        const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(randomMovie.title + ' фильм')}&section=search`;
-        
-        // Создаем HTML с кнопками
-        resultDiv.innerHTML = `
-    <div style="animation: fadeIn 0.5s;">
-        <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${randomMovie.title}</div>
-        <div class="action-buttons">
-            <button 
-               onclick="window.open('${kinopoiskUrl}', '_blank', 'noopener,noreferrer'); trackAction('kinopoisk', '${randomMovie.title.replace(/'/g, "\\'")}')"
-               style="padding: 14px 24px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 16px; border: 1px solid white; background: none; color: white; cursor: pointer; margin: 5px;">
-                КиноПоиск
-            </button>
+            if (!db) {
+                showError("Ошибка подключения к базе данных");
+                return;
+            }
             
-            <button 
-               onclick="window.open('${vkSearchUrl}', '_blank', 'noopener,noreferrer'); trackAction('vk_watch', '${randomMovie.title.replace(/'/g, "\\'")}')"
-               style="padding: 14px 24px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 16px; border: 1px solid white; background: none; color: white; cursor: pointer; margin: 5px;">
-                VK
-            </button>
-        </div>
-        <div style="margin-top: 15px; font-size: 0.8em; color: #999; text-align: center;">
-            Содержимое откроется в новой вкладке, приятного просмотра
-        </div>
-    </div>
-`;
-        
-        // Удаляем фильм из базы
-        await db.collection('movies').doc(randomMovie.id).delete();
-        console.log(`Удалён фильм: ${randomMovie.title}`);
-        
-        // Обновляем список
-        loadMovieList();
-        
-    } catch (error) {
-        showError(`Ошибка: ${error.message}`);
-        console.error("Ошибка получения фильма:", error);
-    } finally {
-        loading.style.display = 'none';
-    }
-}
+            const loading = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            
+            loading.style.display = 'block';
+            resultDiv.innerHTML = '';
+            
+            try {
+                // Получаем ВСЕ фильмы
+                const snapshot = await db.collection('movies').get();
+                
+                if (snapshot.empty) {
+                    resultDiv.innerHTML = `
+                        <div style="color: #6c757d; padding: 30px;">
+                            <h3 style="color: #dc3545;">Нет доступных фильмов!</h3>
+                            <p>Все фильмы отложены или список пуст</p>
+                            <button class="postpone-btn" onclick="checkAndReturnPostponed()" style="margin-top: 15px;">
+                                Проверить отложенные
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Фильтруем активные фильмы на клиенте
+                const activeMovies = [];
+                snapshot.forEach(doc => {
+                    const movieData = doc.data();
+                    // Фильтруем: isActive не равен false
+                    if (movieData.isActive !== false) {
+                        activeMovies.push({
+                            id: doc.id,
+                            title: movieData.title,
+                            added: movieData.createdAt?.toDate() || new Date()
+                        });
+                    }
+                });
+                
+                if (activeMovies.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div style="color: #6c757d; padding: 30px;">
+                            <h3 style="color: #dc3545;">Нет активных фильмов!</h3>
+                            <p>Все фильмы отложены</p>
+                            <button class="postpone-btn" onclick="checkAndReturnPostponed()" style="margin-top: 15px;">
+                                Проверить отложенные
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const randomIndex = Math.floor(Math.random() * activeMovies.length);
+                const randomMovie = activeMovies[randomIndex];
+                currentRandomMovie = randomMovie;
+                
+                // Формируем URL для поиска
+                const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(randomMovie.title)}`;
+                const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(randomMovie.title + ' фильм')}&section=search`;
+                
+                // Создаем HTML с кнопками
+                resultDiv.innerHTML = `
+            <div style="animation: fadeIn 0.5s;">
+                <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${randomMovie.title}</div>
+                <div class="action-buttons">
+                    <button 
+                       onclick="window.open('${kinopoiskUrl}', '_blank', 'noopener,noreferrer'); trackAction('kinopoisk', '${randomMovie.title.replace(/'/g, "\\'")}')"
+                       style="padding: 14px 24px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 900; border: none; background: #FF5500; font-size: 16px; color: white; cursor: pointer; margin: 5px;">
+                        КиноПоиск
+                    </button>
+                    
+                    <button 
+                       onclick="window.open('${vkSearchUrl}', '_blank', 'noopener,noreferrer'); trackAction('vk_watch', '${randomMovie.title.replace(/'/g, "\\'")}')"
+                       style="padding: 14px 24px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 900; border: none; background: #4680C2; font-size: 16px; color: white; cursor: pointer; margin: 5px;">
+                        VK
+                    </button>
+                    
+                    <button class="postpone-btn" onclick="postponeMovie('${randomMovie.id}', '${randomMovie.title.replace(/'/g, "\\'")}')">
+                        Смотреть позже
+                    </button>
+                </div>
+                <div style="margin-top: 15px; font-size: 0.8em; color: #999; text-align: center;">
+                    Фильм будет отложен на 24 часа
+                </div>
+            </div>
+        `;
+                
+            } catch (error) {
+                showError(`Ошибка: ${error.message}`);
+                console.error("Ошибка получения фильма:", error);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
 
-        // ========== ЗАГРУЗИТЬ СПИСОК ФИЛЬМОВ ==========
+        // ========== ОТЛОЖИТЬ ФИЛЬМ НА 24 ЧАСА ==========
+        async function postponeMovie(movieId, movieTitle) {
+            if (!db || !currentRandomMovie) return;
+            
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            
+            try {
+                // Получаем текущее время
+                const now = new Date();
+                const returnTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24 часа
+                
+                // 1. Обновляем фильм: помечаем как неактивный и устанавливаем время возврата
+                await db.collection('movies').doc(movieId).update({
+                    isActive: false,
+                    postponedUntil: returnTime,
+                    postponedAt: now
+                });
+                
+                // 2. Добавляем в коллекцию отложенных для истории
+                await db.collection('postponedMovies').add({
+                    movieId: movieId,
+                    title: movieTitle,
+                    postponedAt: now,
+                    returnAt: returnTime,
+                    returned: false
+                });
+                
+                alert(`Фильм "${movieTitle}" отложен на 24 часа!\nБудет доступен снова: ${returnTime.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})} ${returnTime.toLocaleDateString('ru-RU')}`);
+                
+                // 3. Показываем следующий случайный фильм
+                await getRandomMovie();
+                
+                // 4. Обновляем списки
+                loadMovieList();
+                loadPostponedMovies();
+                
+            } catch (error) {
+                console.error("Ошибка при откладывании фильма:", error);
+                alert("Ошибка при откладывании фильма");
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // ========== ЗАГРУЗИТЬ СПИСОК АКТИВНЫХ ФИЛЬМОВ ==========
         async function loadMovieList() {
             if (!db) return;
             
@@ -382,23 +472,49 @@
             listElement.innerHTML = '<li style="text-align: center; color: #666;">Загрузка...</li>';
             
             try {
-                const snapshot = await db.collection('movies')
-                    .orderBy('createdAt', 'desc')
-                    .get();
+                // Получаем ВСЕ фильмы
+                const snapshot = await db.collection('movies').get();
                 
                 listElement.innerHTML = '';
                 
                 if (snapshot.empty) {
                     listElement.innerHTML = `
                         <li style="text-align: center; color: #6c757d; padding: 20px; list-style-type: none !important;">
-                            Список фильмов пуст
+                            Нет фильмов
                         </li>
                     `;
                     return;
                 }
                 
+                const movies = [];
                 snapshot.forEach(doc => {
-                    const movie = doc.data();
+                    const movieData = doc.data();
+                    movies.push({
+                        id: doc.id,
+                        ...movieData
+                    });
+                });
+                
+                // Фильтруем активные фильмы на клиенте
+                const activeMovies = movies.filter(movie => movie.isActive !== false);
+                
+                if (activeMovies.length === 0) {
+                    listElement.innerHTML = `
+                        <li style="text-align: center; color: #6c757d; padding: 20px; list-style-type: none !important;">
+                            Нет активных фильмов
+                        </li>
+                    `;
+                    return;
+                }
+                
+                // Сортируем на клиенте по дате добавления (новые сначала)
+                activeMovies.sort((a, b) => {
+                    const dateA = a.createdAt?.toDate() || new Date(0);
+                    const dateB = b.createdAt?.toDate() || new Date(0);
+                    return dateB - dateA;
+                });
+                
+                activeMovies.forEach(movie => {
                     const li = document.createElement('li');
                     li.className = 'movie-item';
                     li.innerHTML = `
@@ -408,7 +524,7 @@
                                 Добавлен: ${formatDate(movie.createdAt?.toDate())}
                             </div>
                         </div>
-                        <button class="delete-btn" data-id="${doc.id}">
+                        <button class="delete-btn" data-id="${movie.id}">
                             Удалить
                         </button>
                     `;
@@ -424,12 +540,205 @@
                 });
                 
             } catch (error) {
+                console.error("Ошибка загрузки списка:", error);
                 listElement.innerHTML = `
                     <li style="color: #dc3545; text-align: center;">
-                        Ошибка загрузки списка
+                        Ошибка загрузки: ${error.message}
                     </li>
                 `;
-                console.error("Ошибка загрузки:", error);
+            }
+        }
+
+        // ========== ЗАГРУЗИТЬ СПИСОК ОТЛОЖЕННЫХ ФИЛЬМОВ ==========
+        async function loadPostponedMovies() {
+            if (!db) return;
+            
+            const listElement = document.getElementById('postponed-list');
+            listElement.innerHTML = '<li style="text-align: center; color: #666;">Загрузка...</li>';
+            
+            try {
+                // Получаем ВСЕ фильмы
+                const snapshot = await db.collection('movies').get();
+                
+                listElement.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    listElement.innerHTML = `
+                        <li style="text-align: center; color: #6c757d; padding: 20px; list-style-type: none !important;">
+                            Нет отложенных фильмов
+                        </li>
+                    `;
+                    return;
+                }
+                
+                const movies = [];
+                snapshot.forEach(doc => {
+                    const movieData = doc.data();
+                    movies.push({
+                        id: doc.id,
+                        ...movieData
+                    });
+                });
+                
+                // Фильтруем отложенные фильмы на клиенте
+                const postponedMovies = movies.filter(movie => movie.isActive === false);
+                
+                if (postponedMovies.length === 0) {
+                    listElement.innerHTML = `
+                        <li style="text-align: center; color: #6c757d; padding: 20px; list-style-type: none !important;">
+                            Нет отложенных фильмов
+                        </li>
+                    `;
+                    return;
+                }
+                
+                const now = new Date();
+                
+                // Сортируем по времени возврата (сначала те, что раньше вернутся)
+                postponedMovies.sort((a, b) => {
+                    const dateA = a.postponedUntil?.toDate() || new Date(0);
+                    const dateB = b.postponedUntil?.toDate() || new Date(0);
+                    return dateA - dateB;
+                });
+                
+                postponedMovies.forEach(movie => {
+                    const returnTime = movie.postponedUntil?.toDate();
+                    const timeLeft = returnTime ? Math.max(0, returnTime - now) : 0;
+                    const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+                    const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    const li = document.createElement('li');
+                    li.className = 'movie-item';
+                    
+                    let timeInfo = '';
+                    if (timeLeft > 0) {
+                        timeInfo = `
+                            <div style="font-family: Nunito; font-size: 0.7em; color: #FFA500;">
+                                Вернётся через: ${hoursLeft}ч ${minutesLeft}м
+                            </div>
+                            <div style="font-family: Nunito; font-size: 0.7em; color: #b3b3b3ff;">
+                                До: ${returnTime ? formatDate(returnTime) : 'неизвестно'}
+                            </div>
+                        `;
+                    } else {
+                        timeInfo = `
+                            <div style="font-family: Nunito; font-size: 0.7em; color: #75a744;">
+                                Готов к возврату!
+                            </div>
+                        `;
+                    }
+                    
+                    li.innerHTML = `
+                        <div>
+                            <div style="font-family: Nunito; font-weight: 700; color: #fffaffff; margin-bottom: 8px; font-size: 1.2em;">
+                                ${movie.title}
+                                <span class="postponed-badge">Отложен</span>
+                            </div>
+                            ${timeInfo}
+                        </div>
+                        <button class="delete-btn" data-id="${movie.id}" data-postponed="true">
+                            Вернуть
+                        </button>
+                    `;
+                    listElement.appendChild(li);
+                });
+                
+                // Добавляем обработчики для кнопки "Вернуть сейчас"
+                document.querySelectorAll('.delete-btn[data-postponed="true"]').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const movieId = this.getAttribute('data-id');
+                        returnMovieNow(movieId);
+                    });
+                });
+                
+            } catch (error) {
+                console.error("Ошибка загрузки отложенных фильмов:", error);
+                listElement.innerHTML = `
+                    <li style="color: #dc3545; text-align: center;">
+                        Ошибка загрузки отложенных фильмов: ${error.message}
+                    </li>
+                `;
+            }
+        }
+
+        // ========== ВЕРНУТЬ ФИЛЬМ СЕЙЧАС ==========
+        async function returnMovieNow(movieId) {
+            if (!db) return;
+            
+            if (confirm("Вернуть этот фильм в активный список сейчас?")) {
+                try {
+                    await db.collection('movies').doc(movieId).update({
+                        isActive: true,
+                        postponedUntil: null
+                    });
+                    
+                    // Обновляем списки
+                    loadMovieList();
+                    loadPostponedMovies();
+                    
+                    alert("Фильм возвращен в активный список!");
+                    
+                } catch (error) {
+                    alert("Ошибка возврата фильма: " + error.message);
+                }
+            }
+        }
+
+        // ========== ПРОВЕРИТЬ И ВЕРНУТЬ ОТЛОЖЕННЫЕ ФИЛЬМЫ ==========
+        async function checkAndReturnPostponed() {
+            if (!db) return;
+            
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            
+            try {
+                // Получаем ВСЕ фильмы
+                const snapshot = await db.collection('movies').get();
+                
+                const now = new Date();
+                let count = 0;
+                
+                // Проходим по всем фильмам и проверяем, какие пора вернуть
+                const updates = [];
+                snapshot.forEach(doc => {
+                    const movie = doc.data();
+                    const returnTime = movie.postponedUntil?.toDate();
+                    
+                    // Если фильм отложен и время возврата наступило
+                    if (movie.isActive === false && returnTime && returnTime <= now) {
+                        updates.push({
+                            id: doc.id,
+                            title: movie.title
+                        });
+                        count++;
+                    }
+                });
+                
+                if (count === 0) {
+                    alert("Нет фильмов, которые пора вернуть");
+                    return;
+                }
+                
+                // Обновляем все фильмы, которые пора вернуть
+                for (const update of updates) {
+                    await db.collection('movies').doc(update.id).update({
+                        isActive: true,
+                        postponedUntil: null
+                    });
+                }
+                
+                alert(`Возвращено ${count} фильм(ов) в активный список!`);
+                
+                // Обновляем списки и показываем случайный фильм
+                loadMovieList();
+                loadPostponedMovies();
+                await getRandomMovie();
+                
+            } catch (error) {
+                console.error("Ошибка проверки отложенных фильмов:", error);
+                alert("Ошибка при проверке отложенных фильмов");
+            } finally {
+                loading.style.display = 'none';
             }
         }
 
@@ -440,25 +749,91 @@
             if (confirm("Удалить этот фильм из списка?")) {
                 try {
                     await db.collection('movies').doc(movieId).delete();
-                    loadMovieList(); // Обновляем список
+                    loadMovieList(); // Обновляем список активных
+                    loadPostponedMovies(); // Обновляем список отложенных
                 } catch (error) {
                     alert("Ошибка удаления: " + error.message);
                 }
             }
         }
 
+        // ========== ИНИЦИАЛИЗИРОВАТЬ БАЗУ ДАННЫХ ==========
+        async function initializeDatabase() {
+            try {
+                // Проверяем, нужно ли обновить структуру существующих фильмов
+                const snapshot = await db.collection('movies').limit(1).get();
+                
+                if (!snapshot.empty) {
+                    const updates = [];
+                    const allMovies = await db.collection('movies').get();
+                    
+                    allMovies.forEach(doc => {
+                        const movieData = doc.data();
+                        // Если нет поля isActive, добавляем его
+                        if (movieData.isActive === undefined) {
+                            updates.push(
+                                db.collection('movies').doc(doc.id).update({
+                                    isActive: true,
+                                    postponedUntil: null
+                                })
+                            );
+                        }
+                    });
+                    
+                    // Выполняем все обновления
+                    if (updates.length > 0) {
+                        await Promise.all(updates);
+                        console.log(`Обновлено ${updates.length} фильмов`);
+                    }
+                }
+            } catch (error) {
+                console.error("Ошибка инициализации базы:", error);
+            }
+        }
+
+        // ========== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ==========
+        function switchTab(tabName) {
+            // Обновляем кнопки вкладок
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.tab === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Показываем соответствующую вкладку
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            if (tabName === 'active') {
+                document.getElementById('active-movies-tab').classList.add('active');
+                loadMovieList();
+            } else {
+                document.getElementById('postponed-movies-tab').classList.add('active');
+                loadPostponedMovies();
+            }
+        }
+
         // ========== ПОКАЗАТЬ/СКРЫТЬ СПИСОК ==========
         function toggleMovieList() {
             const container = document.getElementById('movies-list-container');
+            const tabButtons = document.getElementById('tab-buttons');
             const button = document.getElementById('toggle-list-btn');
             
             if (container.style.display === 'block') {
+                // Скрываем список
                 container.style.display = 'none';
+                tabButtons.style.display = 'none';
                 button.textContent = 'Показать список фильмов';
             } else {
+                // Показываем список
                 container.style.display = 'block';
+                tabButtons.style.display = 'flex';
                 button.textContent = 'Скрыть список';
-                loadMovieList(); // Загружаем при открытии
+                // Загружаем активные фильмы при открытии
+                switchTab('active');
+                loadMovieList();
             }
         }
 
@@ -494,12 +869,27 @@
                 return;
             }
             
+            // Инициализируем базу данных
+            initializeDatabase();
+            
             // Назначаем обработчики
             document.getElementById('random-btn').addEventListener('click', getRandomMovie);
             document.getElementById('toggle-list-btn').addEventListener('click', toggleMovieList);
             
+            // Обработчики для вкладок
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    switchTab(this.dataset.tab);
+                });
+            });
+            
             console.log("CineRoll готов к работе!");
         });
+        
+        // Функция для отслеживания действий
+        function trackAction(action, movieTitle) {
+            console.log(`Действие: ${action}, Фильм: ${movieTitle}`);
+        }
     </script>
 <script>
 if ('serviceWorker' in navigator) {
@@ -515,29 +905,4 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 </body>
-
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
