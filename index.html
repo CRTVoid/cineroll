@@ -39,6 +39,7 @@
             margin-bottom: 10px;
         }
         .logo {
+            cursor: pointer;
             margin-top: 20px;
             margin-bottom: 20px;
         }
@@ -1137,6 +1138,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Назначаем обработчики
     document.getElementById('random-btn').addEventListener('click', getRandomMovie);
     document.getElementById('toggle-list-btn').addEventListener('click', toggleMovieList);
+    
+    // Обработчик для клика на логотип - обновление страницы
+    document.querySelector('.logo').addEventListener('click', function() {
+        location.reload();
+    });
     
     // Обработчики для вкладок
     document.querySelectorAll('.tab-btn').forEach(btn => {
