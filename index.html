@@ -31,7 +31,6 @@
             background: #1a1a1aff;
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             margin-top: 110px;
             margin-bottom: 80px;
         }
@@ -51,6 +50,50 @@
             color: #1a1a1aff;
             font-size: 1.1em;
         }
+        .tab-btn {
+    position: relative; /* Важно для позиционирования счетчика */
+}
+
+.tab-counter {
+    position: absolute;
+    top: -6px;
+    right: -3px;
+    background: #FF5500;
+    color: white;
+    font-family: Nunito;
+    font-weight: 900;
+    font-size: 0.8em;
+    padding: 3px 8px;
+    border-radius: 50px;
+    min-width: 18px;
+    text-align: center;
+    z-index: 10;
+    transition: all 0.3s ease;
+}
+
+/* Стандартный стиль для счетчика (не ноль) */
+.tab-counter {
+    background: #75a744ff;
+    color: white;
+}
+
+/* Стиль для активной вкладки (не ноль) */
+.tab-btn.active .tab-counter {
+    background: #75a744ff;
+    opacity: 1;
+}
+
+/* Стиль для счетчика, который равен 0 */
+.tab-counter.zero {
+    background: #666666 !important; /* Серый цвет */
+    opacity: 0.4; /* Полупрозрачность */
+}
+
+/* Стиль для активной вкладки с нулевым счетчиком */
+.tab-btn.active .tab-counter.zero {
+    background: #666666 !important;
+    opacity: 0.4;
+}
         .btn-big {
             background: #75a744ff;
             color: #1a1a1aff;
@@ -81,8 +124,9 @@
         .movie-title {
             font-size: 2.3em;
             color: #fffaffff;
-            margin: 15px 0;
-            font-weight: bold;
+            padding: 10px;
+/*            margin: 15px 0;*/
+            font-weight: 900;
         }
         .loading {
             color: #fffaffff;
@@ -146,14 +190,15 @@
         .postpone-btn {
             background: none;
             color: white;
-            border: solid 1px white;
-            font-weight: 700;
+            border: solid 1px gray;
+            font-weight: 500;
             font-family: Nunito;
-            padding: 12px 24px;
+            padding: 12px 22px;
             border-radius: 50px;
-            font-size: 16px;
+            opacity: 0.6;
+            font-size: 0.9em;
             cursor: pointer;
-            margin-top: 10px;
+/*            margin-top: 5px;*/
             transition: all 0.3s ease;
         }
         
@@ -178,6 +223,7 @@
         }
         .tab-btn.active {
             background: #4e8387ff;
+            font-weight: 900;
             color: #1a1a1aff;
         }
         .tab-content {
@@ -187,11 +233,11 @@
             display: block;
         }
         .postponed-badge {
-            display: inline-block;
+            display: absolute;
             background: #FFA500;
             color: #1a1a1aff;
-            font-size: 0.7em;
-            padding: 3px 8px;
+            font-size: 0.6em;
+            padding: 2px 8px;
             border-radius: 10px;
             margin-left: 8px;
             font-weight: bold;
@@ -265,9 +311,15 @@
         </button>
 
         <div class="tab-buttons" id="tab-buttons" style="display: none;">
-            <button class="tab-btn active" data-tab="active">Активные фильмы</button>
-            <button class="tab-btn" data-tab="postponed">Отложенные</button>
-        </div>
+    <button class="tab-btn active" data-tab="active">
+        Активные фильмы
+        <span class="tab-counter" id="active-counter">0</span>
+    </button>
+    <button class="tab-btn" data-tab="postponed">
+        Отложенные
+        <span class="tab-counter" id="postponed-counter">0</span>
+    </button>
+</div>
 
         <div class="movie-list-container" id="movies-list-container">
             <div class="tab-content active" id="active-movies-tab">
@@ -319,6 +371,55 @@
             }
         }
 
+       // ========== ОБНОВИТЬ СЧЕТЧИКИ ФИЛЬМОВ ==========
+async function updateCounters() {
+    if (!db) return;
+    
+    try {
+        // Получаем ВСЕ фильмы
+        const snapshot = await db.collection('movies').get();
+        
+        let activeCount = 0;
+        let postponedCount = 0;
+        
+        // Считаем активные и отложенные фильмы
+        snapshot.forEach(doc => {
+            const movieData = doc.data();
+            if (movieData.isActive === false) {
+                postponedCount++;
+            } else {
+                activeCount++;
+            }
+        });
+        
+        // Получаем элементы счетчиков
+        const activeCounter = document.getElementById('active-counter');
+        const postponedCounter = document.getElementById('postponed-counter');
+        
+        // Обновляем текст счетчиков
+        activeCounter.textContent = activeCount;
+        postponedCounter.textContent = postponedCount;
+        
+        // Добавляем/удаляем класс zero в зависимости от значения
+        if (activeCount === 0) {
+            activeCounter.classList.add('zero');
+        } else {
+            activeCounter.classList.remove('zero');
+        }
+        
+        if (postponedCount === 0) {
+            postponedCounter.classList.add('zero');
+        } else {
+            postponedCounter.classList.remove('zero');
+        }
+        
+        console.log(`Счетчики обновлены: активные=${activeCount}, отложенные=${postponedCount}`);
+        
+    } catch (error) {
+        console.error("Ошибка обновления счетчиков:", error);
+    }
+}
+
         // ========== ПОЛУЧИТЬ СЛУЧАЙНЫЙ ФИЛЬМ ==========
         async function getRandomMovie() {
             if (!db) {
@@ -346,6 +447,8 @@
                             </button>
                         </div>
                     `;
+                    // Обновляем счетчики (все 0)
+                    updateCounters();
                     return;
                 }
                 
@@ -373,6 +476,8 @@
                             </button>
                         </div>
                     `;
+                    // Обновляем счетчики
+                    updateCounters();
                     return;
                 }
                 
@@ -390,14 +495,14 @@
                 <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${randomMovie.title}</div>
                 <div class="action-buttons">
                     <button 
-                       onclick="window.open('${kinopoiskUrl}', '_blank', 'noopener,noreferrer'); trackAction('kinopoisk', '${randomMovie.title.replace(/'/g, "\\'")}')"
-                       style="padding: 14px 24px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 900; border: none; background: #FF5500; font-size: 16px; color: white; cursor: pointer; margin: 5px;">
+                       onclick="watchMovie('${randomMovie.id}', '${randomMovie.title.replace(/'/g, "\\'")}', 'kinopoisk', '${kinopoiskUrl}')"
+                       style="padding: 12px 22px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 900; border: none; background: #dc3545; font-size: 16px; color: white; cursor: pointer; margin: 2px;">
                         КиноПоиск
                     </button>
                     
                     <button 
-                       onclick="window.open('${vkSearchUrl}', '_blank', 'noopener,noreferrer'); trackAction('vk_watch', '${randomMovie.title.replace(/'/g, "\\'")}')"
-                       style="padding: 14px 24px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 900; border: none; background: #4680C2; font-size: 16px; color: white; cursor: pointer; margin: 5px;">
+                       onclick="watchMovie('${randomMovie.id}', '${randomMovie.title.replace(/'/g, "\\'")}', 'vk', '${vkSearchUrl}')"
+                       style="padding: 12px 22px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 900; border: none; background: #4e8387ff; font-size: 16px; color: white; cursor: pointer; margin: 2px;">
                         VK
                     </button>
                     
@@ -405,7 +510,7 @@
                         Смотреть позже
                     </button>
                 </div>
-                <div style="margin-top: 15px; font-size: 0.8em; color: #999; text-align: center;">
+                <div style="margin-top: 10px; padding-bottom: 15px;font-size: 0.7em; color: #999; text-align: center;">
                     Фильм будет отложен на 24 часа
                 </div>
             </div>
@@ -416,6 +521,48 @@
                 console.error("Ошибка получения фильма:", error);
             } finally {
                 loading.style.display = 'none';
+            }
+        }
+
+        // ========== ПОСМОТРЕТЬ ФИЛЬМ (УДАЛИТЬ ИЗ СПИСКА) ==========
+        async function watchMovie(movieId, movieTitle, platform, url) {
+            if (!db) return;
+            
+            if (confirm(`Открыть ${platform === 'kinopoisk' ? 'КиноПоиск' : 'VK'} и удалить фильм "${movieTitle}" из списка?`)) {
+                try {
+                    // Удаляем фильм из основной коллекции
+                    await db.collection('movies').doc(movieId).delete();
+                    
+                    // Также удаляем все записи об этом фильме из postponedMovies
+                    const postponedSnapshot = await db.collection('postponedMovies')
+                        .where('movieId', '==', movieId)
+                        .get();
+                    
+                    if (!postponedSnapshot.empty) {
+                        postponedSnapshot.forEach(async (doc) => {
+                            await db.collection('postponedMovies').doc(doc.id).delete();
+                        });
+                    }
+                    
+                    // Обновляем счетчики
+                    updateCounters();
+                    
+                    // Обновляем списки
+                    loadMovieList();
+                    loadPostponedMovies();
+                    
+                    // Открываем поиск
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                    
+                    // Показываем следующий случайный фильм
+                    await getRandomMovie();
+                    
+                    // Не показываем alert, чтобы не прерывать пользователя
+                    
+                } catch (error) {
+                    alert("Ошибка при удалении фильма: " + error.message);
+                    console.error("Ошибка удаления фильма:", error);
+                }
             }
         }
 
@@ -447,12 +594,13 @@
                     returned: false
                 });
                 
-                // alert(`Фильм "${movieTitle}" отложен на 24 часа!\nБудет доступен снова: ${returnTime.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})} ${returnTime.toLocaleDateString('ru-RU')}`);
+                // 3. Обновляем счетчики
+                updateCounters();
                 
-                // 3. Показываем следующий случайный фильм
+                // 4. Показываем следующий случайный фильм
                 await getRandomMovie();
                 
-                // 4. Обновляем списки
+                // 5. Обновляем списки
                 loadMovieList();
                 loadPostponedMovies();
                 
@@ -632,7 +780,6 @@
                         <div>
                             <div style="font-family: Nunito; font-weight: 700; color: #fffaffff; margin-bottom: 8px; font-size: 1.2em;">
                                 ${movie.title}
-                                <span class="postponed-badge">Отложен</span>
                             </div>
                             ${timeInfo}
                         </div>
@@ -685,11 +832,12 @@
                         });
                     }
                     
-                    // 3. Обновляем списки
+                    // 3. Обновляем счетчики
+                    updateCounters();
+                    
+                    // 4. Обновляем списки
                     loadMovieList();
                     loadPostponedMovies();
-                    
-                    // alert("Фильм возвращен в активный список!");
                     
                 } catch (error) {
                     alert("Ошибка возврата фильма: " + error.message);
@@ -756,6 +904,9 @@
                 
                 alert(`Возвращено ${count} фильм(ов) в активный список!`);
                 
+                // Обновляем счетчики
+                updateCounters();
+                
                 // Обновляем списки и показываем случайный фильм
                 loadMovieList();
                 loadPostponedMovies();
@@ -788,6 +939,9 @@
                             await db.collection('postponedMovies').doc(doc.id).delete();
                         });
                     }
+                    
+                    // Обновляем счетчики
+                    updateCounters();
                     
                     // Обновляем списки
                     loadMovieList();
@@ -902,31 +1056,34 @@
         }
 
         // ========== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ==========
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("Запуск CineRoll...");
-            
-            // Инициализируем Firebase
-            if (!initFirebase()) {
-                showError("Не удалось подключиться к базе данных");
-                return;
-            }
-            
-            // Инициализируем базу данных
-            initializeDatabase();
-            
-            // Назначаем обработчики
-            document.getElementById('random-btn').addEventListener('click', getRandomMovie);
-            document.getElementById('toggle-list-btn').addEventListener('click', toggleMovieList);
-            
-            // Обработчики для вкладок
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    switchTab(this.dataset.tab);
-                });
-            });
-            
-            console.log("CineRoll готов к работе!");
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Запуск CineRoll...");
+    
+    // Инициализируем Firebase
+    if (!initFirebase()) {
+        showError("Не удалось подключиться к базе данных");
+        return;
+    }
+    
+    // Инициализируем базу данных
+    initializeDatabase();
+    
+    // Инициализируем счетчики (сразу после инициализации Firebase)
+    updateCounters();
+    
+    // Назначаем обработчики
+    document.getElementById('random-btn').addEventListener('click', getRandomMovie);
+    document.getElementById('toggle-list-btn').addEventListener('click', toggleMovieList);
+    
+    // Обработчики для вкладок
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            switchTab(this.dataset.tab);
         });
+    });
+    
+    console.log("CineRoll готов к работе!");
+});
         
         // Функция для отслеживания действий
         function trackAction(action, movieTitle) {
@@ -948,4 +1105,3 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
-
