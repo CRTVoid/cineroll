@@ -279,6 +279,20 @@
         transition: all 0.3s ease;
         text-decoration: none;
     }
+       .postpone-btn {
+            background: none;
+            color: white;
+            border: solid 1px gray;
+            font-weight: 200;
+            font-family: Nunito;
+            padding: 12px 22px;
+            border-radius: 50px;
+            opacity: 0.6;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin-top: 2px;
+            transition: all 0.3s ease;
+        }
 }
     </style>
 </head>
@@ -355,6 +369,9 @@
         // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         let db = null;
         let currentRandomMovie = null;
+        let lastRandomMovieId = null; // Для предотвращения повторного выпадения одного фильма
+        let activeMoviesCache = []; // Кэш активных фильмов
+        let availableMoviesCache = []; // Фильмы доступные для показа (исключая только что показанные)
         
         // ========== ИНИЦИАЛИЗАЦИЯ FIREBASE ==========
         function initFirebase() {
@@ -449,15 +466,21 @@ async function updateCounters() {
                     `;
                     // Обновляем счетчики (все 0)
                     updateCounters();
+                    // Очищаем кэш
+                    activeMoviesCache = [];
+                    availableMoviesCache = [];
+                    lastRandomMovieId = null;
                     return;
                 }
                 
-                // Фильтруем активные фильмы на клиенте
+                const now = new Date();
+                // Фильтруем активные фильмы на клиенте + проверяем время откладывания
                 const activeMovies = [];
                 snapshot.forEach(doc => {
                     const movieData = doc.data();
-                    // Фильтруем: isActive не равен false
+                    // Фильтруем: isActive не равен false И проверяем время откладывания
                     if (movieData.isActive !== false) {
+                        // Дополнительная проверка: если фильм отложен, но время прошло - учитываем его
                         activeMovies.push({
                             id: doc.id,
                             title: movieData.title,
@@ -478,12 +501,44 @@ async function updateCounters() {
                     `;
                     // Обновляем счетчики
                     updateCounters();
+                    // Очищаем кэш
+                    activeMoviesCache = [];
+                    availableMoviesCache = [];
+                    lastRandomMovieId = null;
                     return;
                 }
                 
-                const randomIndex = Math.floor(Math.random() * activeMovies.length);
-                const randomMovie = activeMovies[randomIndex];
+                // Обновляем кэш активных фильмов
+                activeMoviesCache = activeMovies;
+                
+                // Инициализируем availableMoviesCache если пустой
+                if (availableMoviesCache.length === 0) {
+                    availableMoviesCache = [...activeMovies];
+                }
+                
+                // Удаляем последний показанный фильм из доступных (чтобы не повторялся сразу)
+                if (lastRandomMovieId && availableMoviesCache.length > 1) {
+                    availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== lastRandomMovieId);
+                }
+                
+                // Если после фильтрации доступных фильмов не осталось, сбрасываем список
+                if (availableMoviesCache.length === 0) {
+                    availableMoviesCache = [...activeMovies];
+                    // Если все равно пусто (маловероятно), используем все активные
+                    if (availableMoviesCache.length === 0) {
+                        availableMoviesCache = activeMovies;
+                    }
+                }
+                
+                // Генерируем случайный индекс с улучшенной случайностью
+                const randomIndex = Math.floor(Math.random() * availableMoviesCache.length);
+                const randomMovie = availableMoviesCache[randomIndex];
+                
+                // Удаляем выбранный фильм из доступных
+                availableMoviesCache.splice(randomIndex, 1);
+                
                 currentRandomMovie = randomMovie;
+                lastRandomMovieId = randomMovie.id;
                 
                 // Формируем URL для поиска
                 const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(randomMovie.title)}`;
@@ -544,6 +599,10 @@ async function updateCounters() {
                         });
                     }
                     
+                    // Обновляем кэш
+                    activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
+                    availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
+                    
                     // Обновляем счетчики
                     updateCounters();
                     
@@ -566,51 +625,51 @@ async function updateCounters() {
             }
         }
 
-        // ========== ОТЛОЖИТЬ ФИЛЬМ НА 24 ЧАСА ==========
-        async function postponeMovie(movieId, movieTitle) {
-            if (!db || !currentRandomMovie) return;
-            
-            const loading = document.getElementById('loading');
-            loading.style.display = 'block';
-            
-            try {
-                // Получаем текущее время
-                const now = new Date();
-                const returnTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24 часа
-                
-                // 1. Обновляем фильм: помечаем как неактивный и устанавливаем время возврата
-                await db.collection('movies').doc(movieId).update({
-                    isActive: false,
-                    postponedUntil: returnTime,
-                    postponedAt: now
-                });
-                
-                // 2. Добавляем в коллекцию отложенных для истории
-                await db.collection('postponedMovies').add({
-                    movieId: movieId,
-                    title: movieTitle,
-                    postponedAt: now,
-                    returnAt: returnTime,
-                    returned: false
-                });
-                
-                // 3. Обновляем счетчики
-                updateCounters();
-                
-                // 4. Показываем следующий случайный фильм
-                await getRandomMovie();
-                
-                // 5. Обновляем списки
-                loadMovieList();
-                loadPostponedMovies();
-                
-            } catch (error) {
-                console.error("Ошибка при откладывании фильма:", error);
-                alert("Ошибка при откладывании фильма");
-            } finally {
-                loading.style.display = 'none';
-            }
-        }
+       // ========== ОТЛОЖИТЬ ФИЛЬМ НА 24 ЧАСА ==========
+async function postponeMovie(movieId, movieTitle) {
+    if (!db || !currentRandomMovie) return;
+    
+    const loading = document.getElementById('loading');
+    loading.style.display = 'block';
+    
+    try {
+        // Получаем текущее время
+        const now = new Date();
+        const returnTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24 часа
+        
+        // 1. Обновляем фильм: помечаем как неактивный и устанавливаем время возврата
+        await db.collection('movies').doc(movieId).update({
+            isActive: false,
+            postponedUntil: returnTime,
+            postponedAt: now
+        });
+        
+        // 2. Добавляем в коллекцию отложенных для истории
+        await db.collection('postponedMovies').add({
+            movieId: movieId,
+            title: movieTitle,
+            postponedAt: now,
+            returnAt: returnTime,
+            returned: false
+        });
+        
+        // 3. Обновляем кэш
+        activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
+        availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
+        
+        // 4. Обновляем счетчики
+        updateCounters();
+        
+        // 5. Обновляем страницу
+        location.reload();
+        
+    } catch (error) {
+        console.error("Ошибка при откладывании фильма:", error);
+        alert("Ошибка при откладывании фильма");
+    } finally {
+        loading.style.display = 'none';
+    }
+}
 
         // ========== ЗАГРУЗИТЬ СПИСОК АКТИВНЫХ ФИЛЬМОВ ==========
         async function loadMovieList() {
@@ -940,6 +999,10 @@ async function updateCounters() {
                         });
                     }
                     
+                    // Обновляем кэш
+                    activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
+                    availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
+                    
                     // Обновляем счетчики
                     updateCounters();
                     
@@ -1105,4 +1168,3 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
-
