@@ -14,7 +14,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
     <style>
         * {
             box-sizing: border-box;
@@ -244,6 +243,33 @@
             font-weight: bold;
         }
 
+        /* Кнопка "Наверх" */
+        .scroll-to-top {
+            position: fixed;
+            background: none;
+            fill: transparent;
+            bottom: 40px;
+            right: 40px;
+            width: 50px;
+            opacity: 95%;
+            height: 50px;
+            border: none;
+            cursor: pointer;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.1s ease-in-out;
+        }
+
+        .scroll-to-top:hover {
+            transform: scale(1.1);
+        }
+
+        .scroll-to-top:active {
+            transform: scale(0.95);
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -351,6 +377,11 @@
         </div>
     </div>
 
+<!-- Кнопка "Наверх" -->
+<button class="scroll-to-top" id="scrollToTopBtn" aria-label="Промотать вверх">
+    <img src="up.svg" alt="Наверх" width="50" height="50">
+</button>
+
     <!-- Firebase SDK -->
     <!-- ВАЖНО: Используйте ЭТУ версию -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -437,6 +468,33 @@ async function updateCounters() {
         console.error("Ошибка обновления счетчиков:", error);
     }
 }
+
+        // ========== КНОПКА ПРОМОТКИ ВВЕРХ ==========
+        function initScrollToTopButton() {
+            const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+            
+            if (!scrollToTopBtn) return;
+            
+            // Показать/скрыть кнопку при прокрутке
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300 || document.documentElement.scrollTop > 300) {
+                    scrollToTopBtn.style.display = 'flex';
+                } else {
+                    scrollToTopBtn.style.display = 'none';
+                }
+            });
+            
+            // Плавная прокрутка при клике
+            scrollToTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Инициализация - скрыть кнопку при загрузке
+            scrollToTopBtn.style.display = 'none';
+        }
 
         // ========== ПОЛУЧИТЬ СЛУЧАЙНЫЙ ФИЛЬМ ==========
         async function getRandomMovie() {
@@ -1143,6 +1201,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.logo').addEventListener('click', function() {
         location.reload();
     });
+    
+    // Инициализируем кнопку "Наверх"
+    initScrollToTopButton();
     
     // Обработчики для вкладок
     document.querySelectorAll('.tab-btn').forEach(btn => {
