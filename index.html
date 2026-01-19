@@ -644,39 +644,38 @@ async function watchMovie(movieId, movieTitle, platform, url) {
     
     if (confirm(`Открыть ${platform === 'kinopoisk' ? 'КиноПоиск' : 'VK'} и удалить фильм "${movieTitle}" из списка?`)) {
         try {
-            // 1. Сначала удаляем фильм из базы данных
+            // Удаляем фильм
             await db.collection('movies').doc(movieId).delete();
             
-            // 2. Также удаляем все записи об этом фильме из postponedMovies
+            // Также удаляем все записи об этом фильме из postponedMovies
             const postponedSnapshot = await db.collection('postponedMovies')
                 .where('movieId', '==', movieId)
                 .get();
             
             if (!postponedSnapshot.empty) {
-                const deletePromises = [];
-                postponedSnapshot.forEach(doc => {
-                    deletePromises.push(db.collection('postponedMovies').doc(doc.id).delete());
+                postponedSnapshot.forEach(async (doc) => {
+                    await db.collection('postponedMovies').doc(doc.id).delete();
                 });
-                await Promise.all(deletePromises);
             }
             
-            // 3. Обновляем кэш
+            // Обновляем кэш
             activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
             availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
             
-            // 4. Обновляем счетчики
+            // Обновляем счетчики
             updateCounters();
             
-            // 5. Обновляем списки
+            // Обновляем списки
             loadMovieList();
             loadPostponedMovies();
-
             
-            // 7. Только ПОСЛЕ всего вышеперечисленного открываем ссылку
-            // Используем setTimeout чтобы дать время на обновление интерфейса
+            // ПОСЛЕ ВСЕХ ОПЕРАЦИЙ открываем ссылку
+            window.open(url, '_blank');
+            
+            // И сразу показываем новый фильм
             setTimeout(() => {
-                window.open(url, '_blank', 'noopener,noreferrer');
-            }, 300);
+                getRandomMovie();
+            }, 1000); // Даем время пользователю уйти в VK
             
         } catch (error) {
             alert("Ошибка при удалении фильма: " + error.message);
@@ -1236,6 +1235,7 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
 
 
