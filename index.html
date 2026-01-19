@@ -638,54 +638,58 @@ async function updateCounters() {
             }
         }
 
-       // ========== ПОСМОТРЕТЬ ФИЛЬМ (УДАЛИТЬ ИЗ СПИСКА) ==========
+      // ========== ПОСМОТРЕТЬ ФИЛЬМ (УДАЛИТЬ ИЗ СПИСКА) ==========
 async function watchMovie(movieId, movieTitle, platform, url) {
     if (!db) return;
     
     if (confirm(`Открыть ${platform === 'kinopoisk' ? 'КиноПоиск' : 'VK'} и удалить фильм "${movieTitle}" из списка?`)) {
         try {
-            // Сначала открываем поиск, ПОСЛЕ этого удаляем фильм
-            const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+            // 1. Сначала удаляем фильм из базы данных
+            await db.collection('movies').doc(movieId).delete();
             
-            // Даем время на открытие окна
-            setTimeout(async () => {
-                try {
-                    // Удаляем фильм из основной коллекции
-                    await db.collection('movies').doc(movieId).delete();
-                    
-                    // Также удаляем все записи об этом фильме из postponedMovies
-                    const postponedSnapshot = await db.collection('postponedMovies')
-                        .where('movieId', '==', movieId)
-                        .get();
-                    
-                    if (!postponedSnapshot.empty) {
-                        postponedSnapshot.forEach(async (doc) => {
-                            await db.collection('postponedMovies').doc(doc.id).delete();
-                        });
+            // 2. Также удаляем все записи об этом фильме из postponedMovies
+            const postponedSnapshot = await db.collection('postponedMovies')
+                .where('movieId', '==', movieId)
+                .get();
+            
+            if (!postponedSnapshot.empty) {
+                const deletePromises = [];
+                postponedSnapshot.forEach(doc => {
+                    deletePromises.push(db.collection('postponedMovies').doc(doc.id).delete());
+                });
+                await Promise.all(deletePromises);
+            }
+            
+            // 3. Обновляем кэш
+            activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
+            availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
+            
+            // 4. Обновляем счетчики
+            updateCounters();
+            
+            // 5. Обновляем списки
+            loadMovieList();
+            loadPostponedMovies();
+            
+            // 7. Открываем ссылку с задержкой для обновления UI
+            setTimeout(() => {
+                // Для iOS используем другой подход
+                if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+                    // На iOS открываем в новом окне без фокуса
+                    const newWindow = window.open(url, '_blank');
+                    if (newWindow) {
+                        newWindow.blur();
+                        window.focus();
                     }
-
-                    location.reload();
-                    
-                    // Обновляем кэш
-                    activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
-                    availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
-                    
-                    // Обновляем счетчики
-                    updateCounters();
-                    
-                    // Обновляем списки
-                    loadMovieList();
-                    loadPostponedMovies();
-                    
-                } catch (error) {
-                    alert("Ошибка при удалении фильма: " + error.message);
-                    console.error("Ошибка удаления фильма:", error);
+                } else {
+                    // На других устройствах обычное открытие
+                    window.open(url, '_blank', 'noopener,noreferrer');
                 }
-            }, 100); // Небольшая задержка, чтобы окно успело открыться
-                    
+            }, 500);
+            
         } catch (error) {
-            alert("Ошибка при открытии страницы: " + error.message);
-            console.error("Ошибка открытия страницы:", error);
+            alert("Ошибка при удалении фильма: " + error.message);
+            console.error("Ошибка удаления фильма:", error);
         }
     }
 }
@@ -1241,6 +1245,7 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
 
 
