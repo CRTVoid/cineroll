@@ -644,42 +644,57 @@ async function watchMovie(movieId, movieTitle, platform, url) {
     
     if (confirm(`Открыть ${platform === 'kinopoisk' ? 'КиноПоиск' : 'VK'} и удалить фильм "${movieTitle}" из списка?`)) {
         try {
-            // Удаляем фильм
-            await db.collection('movies').doc(movieId).delete();
+            // 1. СРАЗУ открываем ссылку - это должно быть первым действием на iOS
+            const newWindow = window.open(url, '_blank');
             
-            // Также удаляем все записи об этом фильме из postponedMovies
-            const postponedSnapshot = await db.collection('postponedMovies')
-                .where('movieId', '==', movieId)
-                .get();
-            
-            if (!postponedSnapshot.empty) {
-                postponedSnapshot.forEach(async (doc) => {
-                    await db.collection('postponedMovies').doc(doc.id).delete();
-                });
+            // 2. Проверяем, открылось ли окно (на iOS может быть заблокировано)
+            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                // Если окно заблокировано, показываем сообщение
+                alert("Всплывающие окна заблокированы. Разрешите всплывающие окна для этого сайта в настройках Safari.");
+                // Можно предложить альтернативу - скопировать ссылку
+                if (confirm("Хотите скопировать ссылку для поиска?")) {
+                    navigator.clipboard.writeText(url);
+                    alert("Ссылка скопирована в буфер обмена!");
+                }
             }
             
-            // Обновляем кэш
-            activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
-            availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
-            
-            // Обновляем счетчики
-            updateCounters();
-            
-            // Обновляем списки
-            loadMovieList();
-            loadPostponedMovies();
-            
-            // ПОСЛЕ ВСЕХ ОПЕРАЦИЙ открываем ссылку
-            window.open(url, '_blank');
-            
-            // И сразу показываем новый фильм
-            setTimeout(() => {
-                getRandomMovie();
-            }, 1000); // Даем время пользователю уйти в VK
+            // 3. Теперь удаляем фильм в фоне
+            setTimeout(async () => {
+                try {
+                    await db.collection('movies').doc(movieId).delete();
+                    
+                    // Также удаляем все записи об этом фильме из postponedMovies
+                    const postponedSnapshot = await db.collection('postponedMovies')
+                        .where('movieId', '==', movieId)
+                        .get();
+                    
+                    if (!postponedSnapshot.empty) {
+                        const deletePromises = [];
+                        postponedSnapshot.forEach(doc => {
+                            deletePromises.push(db.collection('postponedMovies').doc(doc.id).delete());
+                        });
+                        await Promise.all(deletePromises);
+                    }
+                    
+                    // Обновляем кэш
+                    activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
+                    availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
+                    
+                    // Обновляем счетчики
+                    updateCounters();
+                    
+                    // Обновляем списки
+                    loadMovieList();
+                    loadPostponedMovies();
+                    
+                } catch (error) {
+                    console.error("Ошибка удаления фильма:", error);
+                    // Не показываем alert, чтобы не беспокоить пользователя
+                }
+            }, 100);
             
         } catch (error) {
-            alert("Ошибка при удалении фильма: " + error.message);
-            console.error("Ошибка удаления фильма:", error);
+            console.error("Ошибка открытия ссылки:", error);
         }
     }
 }
@@ -1235,6 +1250,7 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
 
 
