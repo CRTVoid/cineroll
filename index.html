@@ -670,22 +670,13 @@ async function watchMovie(movieId, movieTitle, platform, url) {
             // 5. Обновляем списки
             loadMovieList();
             loadPostponedMovies();
+
             
-            // 7. Открываем ссылку с задержкой для обновления UI
+            // 7. Только ПОСЛЕ всего вышеперечисленного открываем ссылку
+            // Используем setTimeout чтобы дать время на обновление интерфейса
             setTimeout(() => {
-                // Для iOS используем другой подход
-                if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-                    // На iOS открываем в новом окне без фокуса
-                    const newWindow = window.open(url, '_blank');
-                    if (newWindow) {
-                        newWindow.blur();
-                        window.focus();
-                    }
-                } else {
-                    // На других устройствах обычное открытие
-                    window.open(url, '_blank', 'noopener,noreferrer');
-                }
-            }, 500);
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }, 300);
             
         } catch (error) {
             alert("Ошибка при удалении фильма: " + error.message);
@@ -1245,6 +1236,7 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
 
 
