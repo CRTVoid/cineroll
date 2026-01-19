@@ -663,6 +663,8 @@ async function watchMovie(movieId, movieTitle, platform, url) {
                             await db.collection('postponedMovies').doc(doc.id).delete();
                         });
                     }
+
+                    location.reload();
                     
                     // Обновляем кэш
                     activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
@@ -1239,6 +1241,7 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
 
 
