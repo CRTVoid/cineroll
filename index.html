@@ -644,27 +644,27 @@ async function watchMovie(movieId, movieTitle, platform, url) {
     
     if (confirm(`Открыть ${platform === 'kinopoisk' ? 'КиноПоиск' : 'VK'} и удалить фильм "${movieTitle}" из списка?`)) {
         try {
-            // 1. Открываем поиск
+            // Открываем поиск
             window.open(url, '_blank', 'noopener,noreferrer');
             
-            // 2. Удаляем фильм
+            // Удаляем фильм
             await db.collection('movies').doc(movieId).delete();
             
-            // 3. Также удаляем все записи об этом фильме из postponedMovies
+            // Также удаляем все записи об этом фильме из postponedMovies
             const postponedSnapshot = await db.collection('postponedMovies')
                 .where('movieId', '==', movieId)
                 .get();
             
             if (!postponedSnapshot.empty) {
-                const deletePromises = [];
-                postponedSnapshot.forEach(doc => {
-                    deletePromises.push(db.collection('postponedMovies').doc(doc.id).delete());
+                postponedSnapshot.forEach(async (doc) => {
+                    await db.collection('postponedMovies').doc(doc.id).delete();
                 });
-                await Promise.all(deletePromises);
             }
             
-            // 4. ОБНОВЛЯЕМ СТРАНИЦУ
-            location.reload();
+            // ОБНОВЛЯЕМ СТРАНИЦУ СРАЗУ ПОСЛЕ УДАЛЕНИЯ
+            setTimeout(() => {
+                location.reload();
+            }, 500);
             
         } catch (error) {
             alert("Ошибка при удалении фильма: " + error.message);
@@ -1224,6 +1224,7 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
 
 
