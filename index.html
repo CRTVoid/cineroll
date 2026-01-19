@@ -644,31 +644,75 @@ async function watchMovie(movieId, movieTitle, platform, url) {
     
     if (confirm(`Открыть ${platform === 'kinopoisk' ? 'КиноПоиск' : 'VK'} и удалить фильм "${movieTitle}" из списка?`)) {
         try {
-            // Открываем поиск
-            window.open(url, '_blank', 'noopener,noreferrer');
+            // Определяем iOS устройство
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             
-            // Удаляем фильм
-            await db.collection('movies').doc(movieId).delete();
-            
-            // Также удаляем все записи об этом фильме из postponedMovies
-            const postponedSnapshot = await db.collection('postponedMovies')
-                .where('movieId', '==', movieId)
-                .get();
-            
-            if (!postponedSnapshot.empty) {
-                postponedSnapshot.forEach(async (doc) => {
-                    await db.collection('postponedMovies').doc(doc.id).delete();
-                });
+            if (isIOS) {
+                // Для iOS используем другую стратегию
+                // 1. Сначала удаляем фильм
+                await db.collection('movies').doc(movieId).delete();
+                
+                // 2. Также удаляем все записи об этом фильме из postponedMovies
+                const postponedSnapshot = await db.collection('postponedMovies')
+                    .where('movieId', '==', movieId)
+                    .get();
+                
+                if (!postponedSnapshot.empty) {
+                    for (const doc of postponedSnapshot.docs) {
+                        await db.collection('postponedMovies').doc(doc.id).delete();
+                    }
+                }
+                
+                // 3. Обновляем кэш и счетчики
+                activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
+                availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
+                updateCounters();
+                loadMovieList();
+                loadPostponedMovies();
+                
+                // 4. Для iOS открываем в том же окне через location.href
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 100);
+                
+            } else {
+                // Для десктопа и Android используем старый подход
+                window.open(url, '_blank');
+                
+                // Удаляем фильм в фоне
+                setTimeout(async () => {
+                    try {
+                        await db.collection('movies').doc(movieId).delete();
+                        
+                        const postponedSnapshot = await db.collection('postponedMovies')
+                            .where('movieId', '==', movieId)
+                            .get();
+                        
+                        if (!postponedSnapshot.empty) {
+                            for (const doc of postponedSnapshot.docs) {
+                                await db.collection('postponedMovies').doc(doc.id).delete();
+                            }
+                        }
+                        
+                        activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
+                        availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
+                        updateCounters();
+                        loadMovieList();
+                        loadPostponedMovies();
+                        
+                        setTimeout(() => {
+                            getRandomMovie();
+                        }, 1000);
+                        
+                    } catch (error) {
+                        console.error("Ошибка удаления фильма:", error);
+                    }
+                }, 100);
             }
             
-            // ОБНОВЛЯЕМ СТРАНИЦУ СРАЗУ ПОСЛЕ УДАЛЕНИЯ
-            setTimeout(() => {
-                location.reload();
-            }, 500);
-            
         } catch (error) {
-            alert("Ошибка при удалении фильма: " + error.message);
-            console.error("Ошибка удаления фильма:", error);
+            alert("Ошибка: " + error.message);
+            console.error("Ошибка:", error);
         }
     }
 }
@@ -1224,6 +1268,7 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
 
 
