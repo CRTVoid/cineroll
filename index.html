@@ -638,63 +638,37 @@ async function updateCounters() {
             }
         }
 
-      // ========== ПОСМОТРЕТЬ ФИЛЬМ (УДАЛИТЬ ИЗ СПИСКА) ==========
+     // ========== ПОСМОТРЕТЬ ФИЛЬМ (УДАЛИТЬ ИЗ СПИСКА) ==========
 async function watchMovie(movieId, movieTitle, platform, url) {
     if (!db) return;
     
     if (confirm(`Открыть ${platform === 'kinopoisk' ? 'КиноПоиск' : 'VK'} и удалить фильм "${movieTitle}" из списка?`)) {
         try {
-            // 1. СРАЗУ открываем ссылку - это должно быть первым действием на iOS
-            const newWindow = window.open(url, '_blank');
+            // 1. Открываем поиск
+            window.open(url, '_blank', 'noopener,noreferrer');
             
-            // 2. Проверяем, открылось ли окно (на iOS может быть заблокировано)
-            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-                // Если окно заблокировано, показываем сообщение
-                alert("Всплывающие окна заблокированы. Разрешите всплывающие окна для этого сайта в настройках Safari.");
-                // Можно предложить альтернативу - скопировать ссылку
-                if (confirm("Хотите скопировать ссылку для поиска?")) {
-                    navigator.clipboard.writeText(url);
-                    alert("Ссылка скопирована в буфер обмена!");
-                }
+            // 2. Удаляем фильм
+            await db.collection('movies').doc(movieId).delete();
+            
+            // 3. Также удаляем все записи об этом фильме из postponedMovies
+            const postponedSnapshot = await db.collection('postponedMovies')
+                .where('movieId', '==', movieId)
+                .get();
+            
+            if (!postponedSnapshot.empty) {
+                const deletePromises = [];
+                postponedSnapshot.forEach(doc => {
+                    deletePromises.push(db.collection('postponedMovies').doc(doc.id).delete());
+                });
+                await Promise.all(deletePromises);
             }
             
-            // 3. Теперь удаляем фильм в фоне
-            setTimeout(async () => {
-                try {
-                    await db.collection('movies').doc(movieId).delete();
-                    
-                    // Также удаляем все записи об этом фильме из postponedMovies
-                    const postponedSnapshot = await db.collection('postponedMovies')
-                        .where('movieId', '==', movieId)
-                        .get();
-                    
-                    if (!postponedSnapshot.empty) {
-                        const deletePromises = [];
-                        postponedSnapshot.forEach(doc => {
-                            deletePromises.push(db.collection('postponedMovies').doc(doc.id).delete());
-                        });
-                        await Promise.all(deletePromises);
-                    }
-                    
-                    // Обновляем кэш
-                    activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
-                    availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
-                    
-                    // Обновляем счетчики
-                    updateCounters();
-                    
-                    // Обновляем списки
-                    loadMovieList();
-                    loadPostponedMovies();
-                    
-                } catch (error) {
-                    console.error("Ошибка удаления фильма:", error);
-                    // Не показываем alert, чтобы не беспокоить пользователя
-                }
-            }, 100);
+            // 4. ОБНОВЛЯЕМ СТРАНИЦУ
+            location.reload();
             
         } catch (error) {
-            console.error("Ошибка открытия ссылки:", error);
+            alert("Ошибка при удалении фильма: " + error.message);
+            console.error("Ошибка удаления фильма:", error);
         }
     }
 }
@@ -1250,6 +1224,7 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
 
 
