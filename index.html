@@ -638,11 +638,17 @@ async function updateCounters() {
             }
         }
 
-        // ========== ПОСМОТРЕТЬ ФИЛЬМ (УДАЛИТЬ ИЗ СПИСКА) ==========
-        async function watchMovie(movieId, movieTitle, platform, url) {
-            if (!db) return;
+       // ========== ПОСМОТРЕТЬ ФИЛЬМ (УДАЛИТЬ ИЗ СПИСКА) ==========
+async function watchMovie(movieId, movieTitle, platform, url) {
+    if (!db) return;
+    
+    if (confirm(`Открыть ${platform === 'kinopoisk' ? 'КиноПоиск' : 'VK'} и удалить фильм "${movieTitle}" из списка?`)) {
+        try {
+            // Сначала открываем поиск, ПОСЛЕ этого удаляем фильм
+            const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
             
-            if (confirm(`Открыть ${platform === 'kinopoisk' ? 'КиноПоиск' : 'VK'} и удалить фильм "${movieTitle}" из списка?`)) {
+            // Даем время на открытие окна
+            setTimeout(async () => {
                 try {
                     // Удаляем фильм из основной коллекции
                     await db.collection('movies').doc(movieId).delete();
@@ -669,20 +675,18 @@ async function updateCounters() {
                     loadMovieList();
                     loadPostponedMovies();
                     
-                    // Открываем поиск
-                    window.open(url, '_blank', 'noopener,noreferrer');
-                    
-                    // Показываем следующий случайный фильм
-                    await getRandomMovie();
-                    
-                    // Не показываем alert, чтобы не прерывать пользователя
-                    
                 } catch (error) {
                     alert("Ошибка при удалении фильма: " + error.message);
                     console.error("Ошибка удаления фильма:", error);
                 }
-            }
+            }, 100); // Небольшая задержка, чтобы окно успело открыться
+                    
+        } catch (error) {
+            alert("Ошибка при открытии страницы: " + error.message);
+            console.error("Ошибка открытия страницы:", error);
         }
+    }
+}
 
        // ========== ОТЛОЖИТЬ ФИЛЬМ НА 24 ЧАСА ==========
 async function postponeMovie(movieId, movieTitle) {
@@ -1235,6 +1239,7 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
 
 
