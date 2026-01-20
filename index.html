@@ -450,6 +450,85 @@
                 margin-top: 2px;
                 transition: all 0.3s ease;
             }
+                    /* Праздничный оверлей */
+        .birthday-overlay {
+            position: fixed;
+            background: url(z_5154624b.jpg);
+            background-repeat: no-repeat;
+            background-size: cover;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9998;
+            animation: fadeIn 0.8s ease;
+        }
+        
+        .birthday-card {
+            background: linear-gradient(-45deg, rgba(255, 255, 255, 0.15), transparent);
+	        -webkit-backdrop-filter: blur(2px);
+	        backdrop-filter: blur(4px);
+            filter: contrast(120%) brightness(120%);
+            box-shadow: 0 15px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 40px 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 85%;
+            height: 63%;
+            animation: pulse 2s infinite;
+            position: relative;
+            z-index: 9999;
+        }
+        
+        .birthday-title {
+            font-family: Nunito;
+            font-weight: 900;
+            font-size: 1.9em;
+            color: white;
+            margin-bottom: 0px;
+        }
+        
+        .birthday-message {
+            font-family: 'Nunito', sans-serif;
+            font-size: 1em;
+            font-weight: 500;
+            color: white;
+            margin-bottom: 40px;
+            line-height: 1.2em;
+        }
+        
+        .birthday-heart {
+            font-size: 10em;
+            color: #ff6b6b;
+            animation: heartbeat 1.1s infinite;
+        }
+        
+        .birthday-btn {
+            background: none;
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+            padding: 10px 28px;
+            border-radius: 50px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 900;
+            font-size: 1em;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.3);
+        }
+        
+        .birthday-btn:hover {
+            transform: scale(1.05);
+            transition: all 0.3s ease;
+            color: white;
+            background: #ff6b6b;
+        }
         }
     </style>
 </head>
@@ -464,7 +543,7 @@
             <div class="birthday-title">
                 С Днём рождения<span class="sparkle"></span> Светлячок!
             </div>
-            <div class="birthday-heart"><span>♥</span></div>
+            <div class="birthday-heart"><span>❤️</span></div>
             <div class="birthday-message">
                 В этот светлый праздничный день<br>выпадут <b>только твои</b> варианты
             </div>
@@ -1537,6 +1616,3 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
-
-
-
