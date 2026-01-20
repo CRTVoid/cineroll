@@ -25,7 +25,143 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Nunito, sans-serif;
             background: #000000ff;
             min-height: 100vh;
+            overflow-x: hidden;
         }
+        
+        /* Конфетти контейнер - ИСПРАВЛЕНО */
+        #confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9998;
+            overflow: hidden;
+        }
+        
+        .confetti {
+            position: absolute;
+            opacity: 0.8;
+            animation-duration: 3s, 1s;
+            animation-iteration-count: 1, infinite;
+            animation-fill-mode: forwards;
+        }
+        
+        /* Праздничный оверлей */
+        .birthday-overlay {
+            position: fixed;
+            background: url(z_5154624b.jpg);
+            background-repeat: no-repeat;
+            background-size: cover;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9998;
+            animation: fadeIn 0.8s ease;
+        }
+        
+        .birthday-card {
+            background: linear-gradient(-45deg, rgba(255, 255, 255, 0.15), transparent);
+	        -webkit-backdrop-filter: blur(2px);
+	        backdrop-filter: blur(4px);
+            filter: contrast(120%) brightness(120%);
+            box-shadow: 0 15px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 40px 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 85%;
+            animation: pulse 2s infinite;
+            position: relative;
+            z-index: 9999;
+        }
+        
+        .birthday-title {
+            font-family: Nunito;
+            font-weight: 900;
+            font-size: 2.1em;
+            color: white;
+            margin-bottom: 0px;
+        }
+        
+        .birthday-message {
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.1em;
+            font-weight: 500;
+            color: white;
+            margin-bottom: 40px;
+            line-height: 1.5;
+        }
+        
+        .birthday-heart {
+            font-size: 11em;
+            color: #ff6b6b;
+            animation: heartbeat 1.1s infinite;
+        }
+        
+        .birthday-btn {
+            background: none;
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 900;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.3);
+        }
+        
+        .birthday-btn:hover {
+            transform: scale(1.05);
+            transition: all 0.3s ease;
+            color: white;
+            background: #ff6b6b;
+        }
+        
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.01); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes fall {
+            0% {
+                transform: translateY(-100px) translateX(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) translateX(100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes sway {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(20px); }
+        }
+        
+        /* Остальные стили остаются без изменений */
         .container {
             background: #1a1a1aff;
             border-radius: 15px;
@@ -51,49 +187,46 @@
             font-size: 1.1em;
         }
         .tab-btn {
-    position: relative; /* Важно для позиционирования счетчика */
-}
+            position: relative;
+        }
 
-.tab-counter {
-    position: absolute;
-    top: -6px;
-    right: -3px;
-    background: #FF5500;
-    color: white;
-    font-family: Nunito;
-    font-weight: 900;
-    font-size: 0.8em;
-    padding: 3px 8px;
-    border-radius: 50px;
-    min-width: 18px;
-    text-align: center;
-    z-index: 10;
-    transition: all 0.3s ease;
-}
+        .tab-counter {
+            position: absolute;
+            top: -6px;
+            right: -3px;
+            background: #FF5500;
+            color: white;
+            font-family: Nunito;
+            font-weight: 900;
+            font-size: 0.8em;
+            padding: 3px 8px;
+            border-radius: 50px;
+            min-width: 18px;
+            text-align: center;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
 
-/* Стандартный стиль для счетчика (не ноль) */
-.tab-counter {
-    background: #75a744ff;
-    color: white;
-}
+        .tab-counter {
+            background: #75a744ff;
+            color: white;
+        }
 
-/* Стиль для активной вкладки (не ноль) */
-.tab-btn.active .tab-counter {
-    background: #75a744ff;
-    opacity: 1;
-}
+        .tab-btn.active .tab-counter {
+            background: #75a744ff;
+            opacity: 1;
+        }
 
-/* Стиль для счетчика, который равен 0 */
-.tab-counter.zero {
-    background: #666666 !important; /* Серый цвет */
-    opacity: 0.4; /* Полупрозрачность */
-}
+        .tab-counter.zero {
+            background: #666666 !important;
+            opacity: 0.4;
+        }
 
-/* Стиль для активной вкладки с нулевым счетчиком */
-.tab-btn.active .tab-counter.zero {
-    background: #666666 !important;
-    opacity: 0.4;
-}
+        .tab-btn.active .tab-counter.zero {
+            background: #666666 !important;
+            opacity: 0.4;
+        }
+        
         .btn-big {
             background: #75a744ff;
             color: #1a1a1aff;
@@ -161,7 +294,7 @@
         }
         .movie-list-container {
             margin-top: 25px;
-            display: none; /* Начальное состояние - скрыт */
+            display: none;
         }
         .movie-item {
             display: flex;
@@ -187,7 +320,6 @@
             background: #c82333;
         }
         
-        /* НОВЫЕ СТИЛИ ДЛЯ КНОПКИ "СМОТРЕТЬ ПОЗЖЕ" */
         .postpone-btn {
             background: none;
             color: white;
@@ -203,7 +335,6 @@
             transition: all 0.3s ease;
         }
         
-        /* СТИЛИ ДЛЯ ВКЛАДКИ ОТЛОЖЕННЫХ ФИЛЬМОВ */
         .tab-buttons {
             display: flex;
             gap: 10px;
@@ -244,7 +375,6 @@
             font-weight: bold;
         }
 
-        /* Кнопка "Наверх" */
         .scroll-to-top {
             position: fixed;
             background: none;
@@ -283,47 +413,199 @@
                 font-size: 1em;
             }
             .action-buttons {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        margin-top: 20px;
-        flex-wrap: wrap;
-    }
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                margin-top: 20px;
+                flex-wrap: wrap;
+            }
 
-    .action-btn {
-        padding: 12px 24px;
-        border: none;
-        border-radius: 10px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        white-space: nowrap !important;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        transition: all 0.3s ease;
-        text-decoration: none;
-    }
-       .postpone-btn {
-            background: none;
-            color: white;
-            border: solid 1px gray;
-            font-weight: 200;
-            font-family: Nunito;
-            padding: 12px 22px;
-            border-radius: 50px;
-            opacity: 0.6;
-            font-size: 0.9em;
-            cursor: pointer;
-            margin-top: 2px;
-            transition: all 0.3s ease;
+            .action-btn {
+                padding: 12px 24px;
+                border: none;
+                border-radius: 10px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                white-space: nowrap !important;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                transition: all 0.3s ease;
+                text-decoration: none;
+            }
+            .postpone-btn {
+                background: none;
+                color: white;
+                border: solid 1px gray;
+                font-weight: 200;
+                font-family: Nunito;
+                padding: 12px 22px;
+                border-radius: 50px;
+                opacity: 0.6;
+                font-size: 0.9em;
+                cursor: pointer;
+                margin-top: 2px;
+                transition: all 0.3s ease;
+            }
         }
-}
     </style>
 </head>
 <body>
+    
+    <!-- Контейнер для конфетти -->
+    <div id="confetti-container"></div>
+    
+    <!-- Праздничный оверлей -->
+    <div class="birthday-overlay" id="birthdayOverlay">
+        <div class="birthday-card">
+            <div class="birthday-title">
+                С Днём рождения<span class="sparkle"></span> Светлячок!
+            </div>
+            <div class="birthday-heart"><span>❤️</span></div>
+            <div class="birthday-message">
+                В этот светлый праздничный день<br>выпадут <b>только твои</b> варианты
+            </div>
+            <button class="birthday-btn" onclick="closeBirthday()">
+                Я не верю своему счастью!
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Цвета для конфетти
+        const confettiColors = [
+            '#ff6b6b', '#ffd166', '#06d6a0', '#118ab2', '#ef476f',
+            '#ff9e00', '#4ecdc4', '#ff5d8f', '#00bbf9', '#ff9a76',
+            '#ff006e', '#8338ec', '#3a86ff', '#fb5607', '#ffbe0b'
+        ];
+        
+        // Функция создания конфетти (упрощенная версия)
+        function createConfetti() {
+            const container = document.getElementById('confetti-container');
+            const confettiCount = 150; // Много конфетти!
+            
+            // Очищаем предыдущие конфетти
+            container.innerHTML = '';
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                
+                // Случайные параметры
+                const size = Math.random() * 20 + 5; // 5-25px
+                const color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+                const left = Math.random() * 100; // 0-100%
+                const delay = Math.random() * 2; // 0-2 секунды
+                const duration = Math.random() * 3 + 2; // 2-5 секунд
+                const swayDuration = Math.random() * 2 + 1; // 1-3 секунды
+                
+                // Случайная форма
+                const shape = Math.random();
+                let borderRadius = '50%';
+                if (shape < 0.3) {
+                    borderRadius = '0'; // квадрат
+                } else if (shape < 0.6) {
+                    borderRadius = '10%'; // прямоугольник
+                }
+                
+                // Устанавливаем стили
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                confetti.style.left = `${left}vw`;
+                confetti.style.top = '-50px';
+                confetti.style.backgroundColor = color;
+                confetti.style.borderRadius = borderRadius;
+                
+                // Анимация падения с покачиванием
+                confetti.style.animation = `fall ${duration}s ease-in ${delay}s forwards, sway ${swayDuration}s ease-in-out ${delay}s infinite`;
+                
+                container.appendChild(confetti);
+            }
+            
+            console.log(`Создано ${confettiCount} конфетти!`);
+        }
+        
+        // Функция удаления конфетти
+        function removeConfetti() {
+            const container = document.getElementById('confetti-container');
+            // Плавное исчезновение
+            container.style.opacity = '0';
+            container.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => {
+                container.innerHTML = '';
+                container.style.opacity = '1';
+                container.style.transition = '';
+            }, 500);
+        }
+        
+        // Проверяем день рождения
+        function checkBirthday() {
+            const today = new Date();
+            // Установите дату дня рождения жены (месяц 0-11, день 1-31)
+            const birthday = new Date(today.getFullYear(), 0, 20); // 20 января
+            
+            // Сравниваем только месяц и день
+            if (today.getMonth() === birthday.getMonth() && today.getDate() === birthday.getDate()) {
+                // Проверяем, не показывали ли уже сегодня
+                const lastShown = localStorage.getItem('birthdayShown');
+                const todayStr = today.toDateString();
+                
+                if (lastShown !== todayStr) {
+                    showBirthdayMessage();
+                    localStorage.setItem('birthdayShown', todayStr);
+                }
+            }
+        }
+        
+        // Показать поздравление
+        function showBirthdayMessage() {
+            const overlay = document.getElementById('birthdayOverlay');
+            overlay.style.display = 'flex';
+            
+            // Небольшая задержка для отображения оверлея перед конфетти
+            setTimeout(() => {
+                createConfetti();
+            }, 100);
+            
+            // Добавляем праздничный звук (опционально)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ');
+                audio.volume = 0.3;
+                audio.play().catch(e => console.log("Аудио не воспроизводится:", e));
+            } catch (e) {
+                // Игнорируем ошибки с аудио
+                console.log("Аудио не поддерживается");
+            }
+        }
+        
+        // Закрыть поздравление
+        function closeBirthday() {
+            const overlay = document.getElementById('birthdayOverlay');
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.5s ease';
+            
+            removeConfetti(); // Удаляем конфетти
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                overlay.style.opacity = '1';
+                overlay.style.transition = '';
+            }, 500);
+        }
+        
+        // В инициализацию добавьте:
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем день рождения
+            setTimeout(() => {
+                checkBirthday();
+            }, 1000);
+        });
+    </script>
+
+    <!-- Остальной код остается без изменений -->
     <div class="container">
         <div class="header">
             <img class="logo" src="cine-logo.svg" height="45px;">
@@ -1255,19 +1537,3 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
