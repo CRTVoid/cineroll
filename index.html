@@ -266,6 +266,17 @@
             transform: scale(0.95);
         }
 
+        /* Стили для неактивных кнопок */
+        .delete-btn:disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            background: #666 !important;
+        }
+
+        .delete-btn:disabled:hover {
+            background: #666 !important;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -889,6 +900,8 @@ async function postponeMovie(movieId, movieTitle) {
                     const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
                     const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
                     
+                    const canReturn = timeLeft === 0; // Можно вернуть только когда время вышло
+                    
                     const li = document.createElement('li');
                     li.className = 'movie-item';
                     
@@ -912,20 +925,26 @@ async function postponeMovie(movieId, movieTitle) {
                     
                     li.innerHTML = `
                         <div>
-                            <div style="font-family: Nunito; font-weight: 700; color: #fffaffff; margin-bottom: 8px; font-size: 1.2em;">
+                            <div style="font-family: Nunito; font-weight: 700; color: #fffaffff; margin-bottom: 6px; font-size: 1.2em;">
                                 ${movie.title}
                             </div>
                             ${timeInfo}
                         </div>
-                        <button class="delete-btn" data-id="${movie.id}" data-postponed="true">
-                            Вернуть
+                        <button 
+                            class="delete-btn" 
+                            data-id="${movie.id}" 
+                            data-postponed="true"
+                            ${canReturn ? '' : 'disabled'}
+                            style="${canReturn ? '' : 'opacity: 0.5; cursor: not-allowed; background: #666 !important;'}"
+                        >
+                            ${canReturn ? 'Вернуть' : 'Ещё рано'}
                         </button>
                     `;
                     listElement.appendChild(li);
                 });
                 
-                // Добавляем обработчики для кнопки "Вернуть сейчас"
-                document.querySelectorAll('.delete-btn[data-postponed="true"]').forEach(btn => {
+                // Добавляем обработчики для кнопки "Вернуть сейчас" (только для активных кнопок)
+                document.querySelectorAll('.delete-btn[data-postponed="true"]:not([disabled])').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const movieId = this.getAttribute('data-id');
                         returnMovieNow(movieId);
@@ -946,8 +965,26 @@ async function postponeMovie(movieId, movieTitle) {
         async function returnMovieNow(movieId) {
             if (!db) return;
             
-            if (confirm("Вернуть этот фильм в активный список сейчас?")) {
-                try {
+            try {
+                // Получаем данные фильма
+                const movieDoc = await db.collection('movies').doc(movieId).get();
+                if (!movieDoc.exists) return;
+                
+                const movieData = movieDoc.data();
+                const returnTime = movieData.postponedUntil?.toDate();
+                const now = new Date();
+                
+                // Проверяем, истекло ли время откладывания
+                if (returnTime && returnTime > now) {
+                    const timeLeft = returnTime - now;
+                    const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+                    const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    alert(`Фильм можно будет вернуть только через ${hoursLeft}ч ${minutesLeft}м`);
+                    return;
+                }
+                
+                if (confirm("Вернуть этот фильм в активный список сейчас?")) {
                     // 1. Обновляем фильм в основной коллекции
                     await db.collection('movies').doc(movieId).update({
                         isActive: true,
@@ -973,10 +1010,13 @@ async function postponeMovie(movieId, movieTitle) {
                     loadMovieList();
                     loadPostponedMovies();
                     
-                } catch (error) {
-                    alert("Ошибка возврата фильма: " + error.message);
-                    console.error("Ошибка возврата фильма:", error);
+                    // 5. Показываем уведомление
+                    alert("Фильм успешно возвращен в активный список!");
                 }
+                
+            } catch (error) {
+                alert("Ошибка возврата фильма: " + error.message);
+                console.error("Ошибка возврата фильма:", error);
             }
         }
 
@@ -1251,17 +1291,3 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
