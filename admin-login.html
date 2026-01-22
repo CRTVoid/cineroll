@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход в админку Cineroll</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: rgba(45, 45, 45, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #444;
+        }
+        
+        .logo {
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        h1 {
+            color: #4e8387;
+            margin-bottom: 30px;
+            font-weight: 900;
+            font-size: 1.9em;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-weight: 600;
+        }
+        
+        input[type="password"] {
+            width: 100%;
+            padding: 14px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-family: 'Nunito', sans-serif;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #4e8387;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: #75a744;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 900;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        .login-btn:hover {
+            background: #66933a;
+            transform: translateY(-2px);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .error {
+            color: #dc3545;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(220, 53, 69, 0.1);
+            border-radius: 5px;
+            display: none;
+            font-weight: 600;
+        }
+        
+        .back-link {
+            display: block;
+            margin-top: 30px;
+            color: #4e8387;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        
+        .back-link:hover {
+            color: #75a744;
+            text-decoration: underline;
+        }
+        
+        .hint {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+<!--        <div class="logo"></div>-->
+        <h1>Панель управления</h1>
+        
+        <div class="input-group">
+            <label for="password">Пароль администратора</label>
+            <input type="password" 
+                   id="password" 
+                   placeholder="Введите пароль для доступа" 
+                   autofocus
+                   autocomplete="off">
+        </div>
+        
+        <div id="error-message" class="error">
+            Неверный пароль. Попробуйте снова.
+        </div>
+        
+        <button class="login-btn" onclick="login()" id="login-button">
+            Войти в панель управления
+        </button>
+        
+        <a href="index.html" class="back-link">
+            ← Назад к приложению
+        </a>
+        
+        <div class="hint">
+        </div>
+    </div>
+
+    <script>
+        // Пароль по умолчанию (можно изменить)
+        const ADMIN_PASSWORD = 'admin123';
+        
+        // Показать/скрыть ошибку
+        function showError(show) {
+            const errorEl = document.getElementById('error-message');
+            errorEl.style.display = show ? 'block' : 'none';
+        }
+        
+        // Основная функция входа
+        function login() {
+            const password = document.getElementById('password').value.trim();
+            const loginBtn = document.getElementById('login-button');
+            
+            // Валидация
+            if (!password) {
+                showError(true);
+                document.getElementById('error-message').textContent = '⚠️ Введите пароль';
+                return;
+            }
+            
+            // Показываем загрузку
+            loginBtn.textContent = 'Проверка...';
+            loginBtn.disabled = true;
+            
+            // Имитация задержки для UX
+            setTimeout(() => {
+                if (password === ADMIN_PASSWORD) {
+                    // Сохраняем сессию
+                    localStorage.setItem('cineroll_admin_auth', 'true');
+                    localStorage.setItem('cineroll_admin_token', btoa(Date.now() + ADMIN_PASSWORD));
+                    
+                    // Переходим в админку
+                    window.location.href = 'admin.html';
+                } else {
+                    // Ошибка авторизации
+                    showError(true);
+                    document.getElementById('password').value = '';
+                    document.getElementById('password').focus();
+                    
+                    loginBtn.textContent = 'Войти в панель управления';
+                    loginBtn.disabled = false;
+                }
+            }, 500);
+        }
+        
+        // Ввод по нажатию Enter
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+        
+        // Сброс ошибки при вводе
+        document.getElementById('password').addEventListener('input', function() {
+            showError(false);
+        });
+        
+        // Фокус на поле пароля при загрузке
+        window.addEventListener('load', function() {
+            document.getElementById('password').focus();
+        });
+    </script>
+</body>
+</html>
