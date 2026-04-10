@@ -506,115 +506,99 @@ async function updateCounters() {
             scrollToTopBtn.style.display = 'none';
         }
 
-        // ========== ПОЛУЧИТЬ СЛУЧАЙНЫЙ ФИЛЬМ ==========
-        async function getRandomMovie() {
-            if (!db) {
-                showError("Ошибка подключения к базе данных");
-                return;
-            }
-            
-            const loading = document.getElementById('loading');
-            const resultDiv = document.getElementById('result');
-            
-            loading.style.display = 'block';
-            resultDiv.innerHTML = '';
-            
-            try {
-                // Получаем ВСЕ фильмы
-                const snapshot = await db.collection('movies').get();
-                
-                if (snapshot.empty) {
-                    resultDiv.innerHTML = `
-                        <div style="color: #6c757d; padding: 30px;">
-                            <h3 style="color: #dc3545;">Нет доступных фильмов!</h3>
-                            <p>Все фильмы отложены или список пуст</p>
-                            <button class="postpone-btn" onclick="checkAndReturnPostponed()" style="margin-top: 15px;">
-                                Проверить отложенные
-                            </button>
-                        </div>
-                    `;
-                    // Обновляем счетчики (все 0)
-                    updateCounters();
-                    // Очищаем кэш
-                    activeMoviesCache = [];
-                    availableMoviesCache = [];
-                    lastRandomMovieId = null;
-                    return;
-                }
-                
-                const now = new Date();
-                // Фильтруем активные фильмы на клиенте + проверяем время откладывания
-                const activeMovies = [];
-                snapshot.forEach(doc => {
-                    const movieData = doc.data();
-                    // Фильтруем: isActive не равен false И проверяем время откладывания
-                    if (movieData.isActive !== false) {
-                        // Дополнительная проверка: если фильм отложен, но время прошло - учитываем его
-                        activeMovies.push({
-                            id: doc.id,
-                            title: movieData.title,
-                            added: movieData.createdAt?.toDate() || new Date()
-                        });
-                    }
+        // ========== ПОЛУЧИТЬ СЛУЧАЙНЫЙ ФИЛЬМ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ==========
+async function getRandomMovie() {
+    if (!db) {
+        showError("Ошибка подключения к базе данных");
+        return;
+    }
+    
+    const loading = document.getElementById('loading');
+    const resultDiv = document.getElementById('result');
+    
+    loading.style.display = 'block';
+    resultDiv.innerHTML = '';
+    
+    try {
+        // Получаем ВСЕ фильмы
+        const snapshot = await db.collection('movies').get();
+        
+        if (snapshot.empty) {
+            resultDiv.innerHTML = `
+                <div style="color: #6c757d; padding: 30px;">
+                    <h3 style="color: #dc3545;">Нет доступных фильмов!</h3>
+                    <p>Все фильмы отложены или список пуст</p>
+                    <button class="postpone-btn" onclick="checkAndReturnPostponed()" style="margin-top: 15px;">
+                        Проверить отложенные
+                    </button>
+                </div>
+            `;
+            updateCounters();
+            activeMoviesCache = [];
+            availableMoviesCache = [];
+            lastRandomMovieId = null;
+            return;
+        }
+        
+        const now = new Date();
+        
+        // Фильтруем ТОЛЬКО активные фильмы
+        const activeMovies = [];
+        snapshot.forEach(doc => {
+            const movieData = doc.data();
+            if (movieData.isActive !== false) {
+                activeMovies.push({
+                    id: doc.id,
+                    title: movieData.title,
+                    added: movieData.createdAt?.toDate() || new Date()
                 });
-                
-                if (activeMovies.length === 0) {
-                    resultDiv.innerHTML = `
-                        <div style="color: #6c757d; padding: 30px;">
-                            <h3 style="color: #dc3545;">Нет активных фильмов!</h3>
-                            <p>Все фильмы отложены</p>
-                            <button class="postpone-btn" onclick="checkAndReturnPostponed()" style="margin-top: 15px;">
-                                Проверить отложенные
-                            </button>
-                        </div>
-                    `;
-                    // Обновляем счетчики
-                    updateCounters();
-                    // Очищаем кэш
-                    activeMoviesCache = [];
-                    availableMoviesCache = [];
-                    lastRandomMovieId = null;
-                    return;
-                }
-                
-                // Обновляем кэш активных фильмов
-                activeMoviesCache = activeMovies;
-                
-                // Инициализируем availableMoviesCache если пустой
-                if (availableMoviesCache.length === 0) {
-                    availableMoviesCache = [...activeMovies];
-                }
-                
-                // Удаляем последний показанный фильм из доступных (чтобы не повторялся сразу)
-                if (lastRandomMovieId && availableMoviesCache.length > 1) {
-                    availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== lastRandomMovieId);
-                }
-                
-                // Если после фильтрации доступных фильмов не осталось, сбрасываем список
-                if (availableMoviesCache.length === 0) {
-                    availableMoviesCache = [...activeMovies];
-                    // Если все равно пусто (маловероятно), используем все активные
-                    if (availableMoviesCache.length === 0) {
-                        availableMoviesCache = activeMovies;
-                    }
-                }
-                
-                // Генерируем случайный индекс с улучшенной случайностью
-                const randomIndex = Math.floor(Math.random() * availableMoviesCache.length);
-                const randomMovie = availableMoviesCache[randomIndex];
-                
-                // Удаляем выбранный фильм из доступных
-                availableMoviesCache.splice(randomIndex, 1);
-                
-                currentRandomMovie = randomMovie;
-                lastRandomMovieId = randomMovie.id;
-                
-                // Формируем URL для поиска
-                const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(randomMovie.title)}`;
-                const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(randomMovie.title + ' фильм')}&section=search`;
-                
-                // Создаем HTML с кнопками
-                resultDiv.innerHTML = `
+            }
+        });
+        
+        if (activeMovies.length === 0) {
+            resultDiv.innerHTML = `
+                <div style="color: #6c757d; padding: 30px;">
+                    <h3 style="color: #dc3545;">Нет активных фильмов!</h3>
+                    <p>Все фильмы отложены</p>
+                    <button class="postpone-btn" onclick="checkAndReturnPostponed()" style="margin-top: 15px;">
+                        Проверить отложенные
+                    </button>
+                </div>
+            `;
+            updateCounters();
+            activeMoviesCache = [];
+            availableMoviesCache = [];
+            lastRandomMovieId = null;
+            return;
+        }
+        
+        // Обновляем кэш активных фильмов
+        activeMoviesCache = activeMovies;
+        
+        // Создаем массив для выбора
+        let moviesForSelection = [...activeMovies];
+        
+        // Исключаем последний показанный фильм только если есть другие варианты
+        if (lastRandomMovieId && moviesForSelection.length > 1) {
+            const filteredMovies = moviesForSelection.filter(movie => movie.id !== lastRandomMovieId);
+            if (filteredMovies.length > 0) {
+                moviesForSelection = filteredMovies;
+            }
+        }
+        
+        // Генерируем случайный индекс
+        const randomIndex = Math.floor(Math.random() * moviesForSelection.length);
+        const randomMovie = moviesForSelection[randomIndex];
+        
+        currentRandomMovie = randomMovie;
+        lastRandomMovieId = randomMovie.id;
+        
+        // Формируем URL для поиска
+        const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(randomMovie.title)}`;
+        const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(randomMovie.title + ' фильм')}&section=search`;
+        
+        // Создаем HTML с кнопками
+        resultDiv.innerHTML = `
             <div style="animation: fadeIn 0.5s;">
                 <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${randomMovie.title}</div>
                 <div class="action-buttons">
@@ -639,14 +623,14 @@ async function updateCounters() {
                 </div>
             </div>
         `;
-                
-            } catch (error) {
-                showError(`Ошибка: ${error.message}`);
-                console.error("Ошибка получения фильма:", error);
-            } finally {
-                loading.style.display = 'none';
-            }
-        }
+        
+    } catch (error) {
+        showError(`Ошибка: ${error.message}`);
+        console.error("Ошибка получения фильма:", error);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
 
     // ========== ПОСМОТРЕТЬ ФИЛЬМ (УДАЛИТЬ ИЗ СПИСКА) ==========
 async function watchMovie(movieId, movieTitle, platform, url) {
