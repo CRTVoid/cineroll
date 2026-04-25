@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Cineroll admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Chart.js для графиков -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -26,7 +25,6 @@
             padding: 20px;
         }
         
-        /* Header */
         .admin-header {
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             padding: 25px;
@@ -37,6 +35,8 @@
             align-items: center;
             border: 1px solid #333;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            flex-wrap: wrap;
+            gap: 15px;
         }
         
         .admin-header h1 {
@@ -56,6 +56,7 @@
             display: flex;
             gap: 15px;
             align-items: center;
+            flex-wrap: wrap;
         }
         
         .last-update {
@@ -63,7 +64,40 @@
             font-size: 0.9em;
         }
         
-        /* Stats Grid */
+        /* Space Switcher */
+        .space-switcher {
+            display: flex;
+            gap: 8px;
+            background: #1a1a1a;
+            padding: 5px;
+            border-radius: 50px;
+            border: 1px solid #333;
+        }
+        
+        .space-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: transparent;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+        
+        .space-btn:hover {
+            color: #fff;
+            background: #333;
+        }
+        
+        .space-btn.active {
+            background: #75a744;
+            color: #1a1a1a;
+            font-weight: 900;
+        }
+        
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -143,15 +177,6 @@
             gap: 5px;
         }
         
-        .stat-change.positive {
-            color: #75a744;
-        }
-        
-        .stat-change.negative {
-            color: #dc3545;
-        }
-        
-        /* Sections */
         .admin-section {
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             padding: 30px;
@@ -167,6 +192,8 @@
             margin-bottom: 25px;
             padding-bottom: 15px;
             border-bottom: 2px solid #4e8387;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
         .section-title {
@@ -178,11 +205,14 @@
             gap: 10px;
         }
         
-        .section-title i {
-            font-size: 1.2em;
+        .section-title .space-badge {
+            background: #75a744;
+            color: #1a1a1a;
+            font-size: 0.5em;
+            padding: 4px 12px;
+            border-radius: 50px;
         }
         
-        /* Tabs */
         .tabs {
             display: flex;
             gap: 10px;
@@ -213,7 +243,6 @@
             font-weight: 900;
         }
         
-        /* Search & Filters */
         .search-container {
             display: flex;
             gap: 15px;
@@ -238,7 +267,6 @@
             border-color: #4e8387;
         }
         
-        /* Buttons */
         .btn-group {
             display: flex;
             gap: 10px;
@@ -312,7 +340,6 @@
             background: #555;
         }
         
-        /* Table */
         .table-container {
             overflow-x: auto;
             border-radius: 8px;
@@ -377,7 +404,6 @@
             border: 1px solid #dc3545;
         }
         
-        /* Charts */
         .charts-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -392,7 +418,6 @@
             border: 1px solid #333;
         }
         
-        /* Export Cards */
         .export-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -419,7 +444,6 @@
             font-size: 0.95em;
         }
         
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -473,7 +497,6 @@
             gap: 10px;
         }
         
-        /* Loading */
         .loading {
             display: none;
             position: fixed;
@@ -501,7 +524,6 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Toast */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -534,7 +556,6 @@
             }
         }
         
-        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -568,7 +589,6 @@
             }
         }
         
-        /* Checkbox styling */
         input[type="checkbox"] {
             width: 20px;
             height: 20px;
@@ -576,7 +596,6 @@
             accent-color: #4e8387;
         }
         
-        /* Empty state */
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -586,15 +605,12 @@
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
     </div>
     
-    <!-- Toast Notifications -->
     <div class="toast" id="toast"></div>
     
-    <!-- Delete Confirmation Modal -->
     <div class="modal" id="deleteModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -611,7 +627,6 @@
         </div>
     </div>
     
-    <!-- Bulk Actions Modal -->
     <div class="modal" id="bulkModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -630,15 +645,22 @@
         </div>
     </div>
 
-    <!-- Main Container -->
     <div class="container">
-        <!-- Header -->
         <header class="admin-header">
             <h1>
                 CINEROLL 
-                <span class="version">v1.0</span>
+                <span class="version">v1.1</span>
             </h1>
             <div class="header-controls">
+                <!-- Space Switcher -->
+                <div class="space-switcher" id="spaceSwitcher">
+                    <button class="space-btn active" data-space="default" onclick="switchSpace('default')">
+                        👤 Основной
+                    </button>
+                    <button class="space-btn" data-space="user1" onclick="switchSpace('user1')">
+                        👤 User1
+                    </button>
+                </div>
                 <div class="last-update" id="lastUpdate">
                     Обновлено: только что
                 </div>
@@ -651,7 +673,6 @@
             </div>
         </header>
         
-        <!-- Statistics -->
         <div class="stats-grid">
             <div class="stat-card total">
                 <div class="stat-label">
@@ -694,11 +715,11 @@
             </div>
         </div>
         
-        <!-- Movie Management Section -->
         <section class="admin-section">
             <div class="section-header">
                 <h2 class="section-title">
                     <i></i> Управление фильмами
+                    <span class="space-badge" id="currentSpaceBadge">default</span>
                 </h2>
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="openBulkActions()">
@@ -710,7 +731,6 @@
                 </div>
             </div>
             
-            <!-- Tabs -->
             <div class="tabs" id="movieTabs">
                 <button class="tab active" data-tab="all" onclick="switchTab('all')">
                     Все фильмы
@@ -726,7 +746,6 @@
                 </button>
             </div>
             
-            <!-- Search and Filters -->
             <div class="search-container">
                 <input type="text" 
                        class="search-box" 
@@ -747,7 +766,6 @@
                 </div>
             </div>
             
-            <!-- Movies Table -->
             <div class="table-container">
                 <table id="moviesTable">
                     <thead>
@@ -772,7 +790,6 @@
                 </table>
             </div>
             
-            <!-- Pagination -->
             <div class="btn-group" style="justify-content: center; margin-top: 20px;">
                 <button class="btn btn-secondary" onclick="prevPage()" id="prevBtn" disabled>
                     ◀ Назад
@@ -786,7 +803,6 @@
             </div>
         </section>
         
-        <!-- Analytics Section -->
         <section class="admin-section">
             <div class="section-header">
                 <h2 class="section-title">
@@ -807,7 +823,6 @@
             </div>
         </section>
         
-        <!-- Export Section -->
         <section class="admin-section">
             <div class="section-header">
                 <h2 class="section-title">
@@ -854,7 +869,6 @@
             </div>
         </section>
         
-        <!-- System Info -->
         <section class="admin-section">
             <div class="section-header">
                 <h2 class="section-title">
@@ -868,7 +882,7 @@
             <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
                 <div class="stat-card">
                     <div class="stat-label">Версия БД</div>
-                    <div class="stat-number" style="font-size: 2em;">v1.0</div>
+                    <div class="stat-number" style="font-size: 2em;">v1.1</div>
                 </div>
                 
                 <div class="stat-card">
@@ -890,7 +904,6 @@
         </section>
     </div>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     
@@ -907,6 +920,7 @@
 
         // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         let db;
+        let currentSpace = 'default'; // 'default' или 'user1'
         let currentTab = 'all';
         let currentPage = 1;
         const pageSize = 20;
@@ -916,10 +930,17 @@
         let deleteQueue = [];
         let statusChart = null;
         let activityChart = null;
+
+        // Коллекции для разных пространств
+        function getCollection(collectionName) {
+            if (currentSpace === 'user1') {
+                return 'user1_' + collectionName;
+            }
+            return collectionName;
+        }
         
         // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
         
-        // Показать уведомление
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -931,12 +952,10 @@
             }, 3000);
         }
         
-        // Показать/скрыть загрузку
         function showLoading(show) {
             document.getElementById('loading').style.display = show ? 'flex' : 'none';
         }
         
-        // Открыть/закрыть модальное окно
         function openModal(modalId) {
             document.getElementById(modalId).style.display = 'flex';
         }
@@ -945,7 +964,6 @@
             document.getElementById(modalId).style.display = 'none';
         }
         
-        // Форматирование даты
         function formatDate(date) {
             if (!date) return '—';
             const d = date.toDate ? date.toDate() : new Date(date);
@@ -973,6 +991,30 @@
             window.location.href = 'admin-login.html';
         }
         
+        // ========== ПЕРЕКЛЮЧЕНИЕ ПРОСТРАНСТВА ==========
+        
+        function switchSpace(space) {
+            currentSpace = space;
+            currentPage = 1;
+            selectedMovieIds.clear();
+            
+            // Обновляем кнопки
+            document.querySelectorAll('.space-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.space === space) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Обновляем бейдж
+            document.getElementById('currentSpaceBadge').textContent = space;
+            
+            // Перезагружаем данные
+            loadAllMovies();
+            
+            showToast(`Переключено на пространство: ${space === 'default' ? 'Основной' : 'User1'}`);
+        }
+        
         // ========== ИНИЦИАЛИЗАЦИЯ FIREBASE ==========
         
         function initFirebase() {
@@ -994,8 +1036,12 @@
         async function loadAllMovies() {
             showLoading(true);
             try {
+                const moviesCol = getCollection('movies');
+                const deletedCol = getCollection('deletedMovies');
+                const postponedCol = getCollection('postponedMovies');
+                
                 // Загружаем основные фильмы
-                const moviesSnapshot = await db.collection('movies').get();
+                const moviesSnapshot = await db.collection(moviesCol).get();
                 const movies = [];
                 
                 moviesSnapshot.forEach(doc => {
@@ -1006,25 +1052,31 @@
                         status: data.isActive === false ? 'postponed' : 'active',
                         addedDate: data.createdAt,
                         postponedUntil: data.postponedUntil,
-                        createdAt: data.createdAt
+                        createdAt: data.createdAt,
+                        space: currentSpace
                     });
                 });
                 
                 // Загружаем удаленные фильмы
-                const deletedSnapshot = await db.collection('deletedMovies').get();
                 const deletedMovies = [];
-                
-                deletedSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    deletedMovies.push({
-                        id: doc.id,
-                        title: data.title || 'Без названия',
-                        status: 'deleted',
-                        addedDate: data.createdAt || data.deletedAt,
-                        deletedAt: data.deletedAt,
-                        originalId: data.originalId
+                try {
+                    const deletedSnapshot = await db.collection(deletedCol).get();
+                    
+                    deletedSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        deletedMovies.push({
+                            id: doc.id,
+                            title: data.title || 'Без названия',
+                            status: 'deleted',
+                            addedDate: data.createdAt || data.deletedAt,
+                            deletedAt: data.deletedAt,
+                            originalId: data.originalId,
+                            space: currentSpace
+                        });
                     });
-                });
+                } catch (e) {
+                    console.log('Коллекция deletedMovies не найдена для пространства', currentSpace);
+                }
                 
                 // Объединяем
                 allMovies = [...movies, ...deletedMovies];
@@ -1042,7 +1094,7 @@
                 document.getElementById('lastUpdate').textContent = 
                     `Обновлено: ${new Date().toLocaleTimeString('ru-RU')}`;
                 
-                showToast('Данные успешно загружены');
+                showToast(`Данные ${currentSpace === 'default' ? 'основного' : 'user1'} пространства загружены`);
                 
             } catch (error) {
                 console.error('Ошибка загрузки фильмов:', error);
@@ -1060,13 +1112,11 @@
             const postponed = allMovies.filter(m => m.status === 'postponed').length;
             const deleted = allMovies.filter(m => m.status === 'deleted').length;
             
-            // Обновляем цифры
             document.getElementById('totalMovies').textContent = total;
             document.getElementById('activeMovies').textContent = active;
             document.getElementById('postponedMovies').textContent = postponed;
             document.getElementById('deletedMovies').textContent = deleted;
             
-            // Обновляем системную информацию
             document.getElementById('totalRecords').textContent = total;
             document.getElementById('dataSize').textContent = Math.round(total * 0.5) + ' KB';
             document.getElementById('dbStatus').textContent = 'ok';
@@ -1078,7 +1128,6 @@
             currentTab = tab;
             currentPage = 1;
             
-            // Обновляем активную вкладку
             document.querySelectorAll('.tab').forEach(t => {
                 t.classList.remove('active');
                 if (t.dataset.tab === tab) {
@@ -1100,7 +1149,6 @@
         }
         
         function filterMovies(searchTerm = '') {
-            // Фильтруем по вкладке
             let filtered = allMovies;
             
             if (currentTab === 'active') {
@@ -1111,14 +1159,12 @@
                 filtered = filtered.filter(m => m.status === 'deleted');
             }
             
-            // Фильтруем по поиску
             if (searchTerm) {
                 filtered = filtered.filter(m => 
                     m.title.toLowerCase().includes(searchTerm)
                 );
             }
             
-            // Сортируем по дате (новые сначала)
             filtered.sort((a, b) => {
                 const dateA = a.addedDate?.toDate ? a.addedDate.toDate() : new Date(a.addedDate);
                 const dateB = b.addedDate?.toDate ? b.addedDate.toDate() : new Date(b.addedDate);
@@ -1306,6 +1352,9 @@
             
             showLoading(true);
             try {
+                const moviesCol = getCollection('movies');
+                const deletedCol = getCollection('deletedMovies');
+                
                 let successCount = 0;
                 let errorCount = 0;
                 
@@ -1313,19 +1362,17 @@
                     try {
                         const movie = allMovies.find(m => m.id === movieId);
                         
-                        if (movie.status === 'deleted') {
-                            // Уже удаленный - удаляем из архива
-                            await db.collection('deletedMovies').doc(movieId).delete();
+                        if (movie && movie.status === 'deleted') {
+                            await db.collection(deletedCol).doc(movieId).delete();
                         } else {
-                            // Активный/отложенный - перемещаем в архив
-                            const movieDoc = await db.collection('movies').doc(movieId).get();
+                            const movieDoc = await db.collection(moviesCol).doc(movieId).get();
                             if (movieDoc.exists) {
-                                await db.collection('deletedMovies').add({
+                                await db.collection(deletedCol).add({
                                     ...movieDoc.data(),
                                     deletedAt: new Date(),
                                     originalId: movieId
                                 });
-                                await db.collection('movies').doc(movieId).delete();
+                                await db.collection(moviesCol).doc(movieId).delete();
                             }
                         }
                         successCount++;
@@ -1337,7 +1384,6 @@
                 
                 showToast(`Удалено ${successCount} фильмов${errorCount > 0 ? `, ошибок: ${errorCount}` : ''}`);
                 
-                // Обновляем данные
                 selectedMovieIds.clear();
                 await loadAllMovies();
                 
@@ -1356,12 +1402,13 @@
             
             showLoading(true);
             try {
+                const moviesCol = getCollection('movies');
                 let successCount = 0;
                 const returnTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
                 
                 for (const movieId of selectedMovieIds) {
                     try {
-                        await db.collection('movies').doc(movieId).update({
+                        await db.collection(moviesCol).doc(movieId).update({
                             isActive: false,
                             postponedUntil: returnTime,
                             postponedAt: new Date()
@@ -1374,7 +1421,6 @@
                 
                 showToast(`Отложено ${successCount} фильмов`);
                 
-                // Обновляем данные
                 selectedMovieIds.clear();
                 await loadAllMovies();
                 
@@ -1393,28 +1439,28 @@
             
             showLoading(true);
             try {
+                const moviesCol = getCollection('movies');
+                const deletedCol = getCollection('deletedMovies');
                 let successCount = 0;
                 
                 for (const movieId of selectedMovieIds) {
                     try {
                         const movie = allMovies.find(m => m.id === movieId);
                         
-                        if (movie.status === 'deleted') {
-                            // Восстанавливаем из архива
-                            const deletedDoc = await db.collection('deletedMovies').doc(movieId).get();
+                        if (movie && movie.status === 'deleted') {
+                            const deletedDoc = await db.collection(deletedCol).doc(movieId).get();
                             if (deletedDoc.exists) {
                                 const data = deletedDoc.data();
-                                await db.collection('movies').doc(data.originalId || movieId).set({
+                                await db.collection(moviesCol).doc(data.originalId || movieId).set({
                                     title: data.title,
                                     isActive: true,
                                     createdAt: data.createdAt || new Date(),
                                     postponedUntil: null
                                 });
-                                await db.collection('deletedMovies').doc(movieId).delete();
+                                await db.collection(deletedCol).doc(movieId).delete();
                             }
                         } else {
-                            // Активируем активный/отложенный
-                            await db.collection('movies').doc(movieId).update({
+                            await db.collection(moviesCol).doc(movieId).update({
                                 isActive: true,
                                 postponedUntil: null
                             });
@@ -1427,7 +1473,6 @@
                 
                 showToast(`Активировано ${successCount} фильмов`);
                 
-                // Обновляем данные
                 selectedMovieIds.clear();
                 await loadAllMovies();
                 
@@ -1449,14 +1494,15 @@
                 status: movie.status,
                 addedDate: formatDate(movie.addedDate),
                 postponedUntil: movie.postponedUntil ? formatDate(movie.postponedUntil) : '',
-                id: movie.id
+                id: movie.id,
+                space: movie.space
             }));
             
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `cineroll-selected-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `cineroll-${currentSpace}-selected-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             URL.revokeObjectURL(url);
             
@@ -1467,26 +1513,27 @@
         
         async function deleteSingleMovie(movieId) {
             const movie = allMovies.find(m => m.id === movieId);
-            const confirmDelete = confirm(`Удалить фильм "${movie.title}"?`);
+            const confirmDelete = confirm(`Удалить фильм "${movie ? movie.title : movieId}"?`);
             
             if (!confirmDelete) return;
             
             showLoading(true);
             try {
-                if (movie.status === 'deleted') {
-                    // Окончательное удаление из архива
-                    await db.collection('deletedMovies').doc(movieId).delete();
+                const moviesCol = getCollection('movies');
+                const deletedCol = getCollection('deletedMovies');
+                
+                if (movie && movie.status === 'deleted') {
+                    await db.collection(deletedCol).doc(movieId).delete();
                     showToast('Фильм окончательно удален');
                 } else {
-                    // Перемещение в архив
-                    const movieDoc = await db.collection('movies').doc(movieId).get();
+                    const movieDoc = await db.collection(moviesCol).doc(movieId).get();
                     if (movieDoc.exists) {
-                        await db.collection('deletedMovies').add({
+                        await db.collection(deletedCol).add({
                             ...movieDoc.data(),
                             deletedAt: new Date(),
                             originalId: movieId
                         });
-                        await db.collection('movies').doc(movieId).delete();
+                        await db.collection(moviesCol).doc(movieId).delete();
                         showToast('Фильм перемещен в архив');
                     }
                 }
@@ -1503,7 +1550,8 @@
         async function activateMovie(movieId) {
             showLoading(true);
             try {
-                await db.collection('movies').doc(movieId).update({
+                const moviesCol = getCollection('movies');
+                await db.collection(moviesCol).doc(movieId).update({
                     isActive: true,
                     postponedUntil: null
                 });
@@ -1521,9 +1569,10 @@
         async function postponeMovie(movieId) {
             showLoading(true);
             try {
+                const moviesCol = getCollection('movies');
                 const returnTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
                 
-                await db.collection('movies').doc(movieId).update({
+                await db.collection(moviesCol).doc(movieId).update({
                     isActive: false,
                     postponedUntil: returnTime,
                     postponedAt: new Date()
@@ -1542,16 +1591,18 @@
         async function restoreMovie(movieId) {
             showLoading(true);
             try {
-                const deletedDoc = await db.collection('deletedMovies').doc(movieId).get();
+                const moviesCol = getCollection('movies');
+                const deletedCol = getCollection('deletedMovies');
+                const deletedDoc = await db.collection(deletedCol).doc(movieId).get();
                 if (deletedDoc.exists) {
                     const data = deletedDoc.data();
-                    await db.collection('movies').doc(data.originalId || movieId).set({
+                    await db.collection(moviesCol).doc(data.originalId || movieId).set({
                         title: data.title,
                         isActive: true,
                         createdAt: data.createdAt || new Date(),
                         postponedUntil: null
                     });
-                    await db.collection('deletedMovies').doc(movieId).delete();
+                    await db.collection(deletedCol).doc(movieId).delete();
                     
                     showToast('Фильм восстановлен');
                     await loadAllMovies();
@@ -1568,32 +1619,40 @@
         async function exportToJSON() {
             showLoading(true);
             try {
-                const moviesSnapshot = await db.collection('movies').get();
-                const deletedSnapshot = await db.collection('deletedMovies').get();
+                const moviesCol = getCollection('movies');
+                const deletedCol = getCollection('deletedMovies');
+                
+                const moviesSnapshot = await db.collection(moviesCol).get();
+                const deletedSnapshot = await db.collection(deletedCol).get().catch(() => ({ empty: true, forEach: () => {} }));
                 
                 const movies = [];
                 moviesSnapshot.forEach(doc => {
+                    const data = doc.data();
                     movies.push({
                         id: doc.id,
-                        ...doc.data(),
-                        createdAt: doc.data().createdAt?.toDate().toISOString(),
-                        postponedUntil: doc.data().postponedUntil?.toDate().toISOString()
+                        ...data,
+                        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
+                        postponedUntil: data.postponedUntil?.toDate ? data.postponedUntil.toDate().toISOString() : null
                     });
                 });
                 
                 const deleted = [];
-                deletedSnapshot.forEach(doc => {
-                    deleted.push({
-                        id: doc.id,
-                        ...doc.data(),
-                        createdAt: doc.data().createdAt?.toDate().toISOString(),
-                        deletedAt: doc.data().deletedAt?.toDate().toISOString()
+                if (!deletedSnapshot.empty) {
+                    deletedSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        deleted.push({
+                            id: doc.id,
+                            ...data,
+                            createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
+                            deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate().toISOString() : null
+                        });
                     });
-                });
+                }
                 
                 const exportData = {
                     exportDate: new Date().toISOString(),
-                    version: '1.0',
+                    version: '1.1',
+                    space: currentSpace,
                     movies: movies,
                     deletedMovies: deleted
                 };
@@ -1602,11 +1661,11 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `cineroll-full-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.download = `cineroll-${currentSpace}-backup-${new Date().toISOString().split('T')[0]}.json`;
                 a.click();
                 URL.revokeObjectURL(url);
                 
-                showToast('Полный бэкап экспортирован');
+                showToast(`Бэкап пространства ${currentSpace} экспортирован`);
                 
             } catch (error) {
                 showToast('Ошибка экспорта', 'error');
@@ -1618,16 +1677,16 @@
         async function exportToCSV() {
             showLoading(true);
             try {
-                const snapshot = await db.collection('movies').get();
+                const moviesCol = getCollection('movies');
+                const snapshot = await db.collection(moviesCol).get();
                 let csv = 'Название;Статус;Дата добавления;Отложен до\n';
                 
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const status = data.isActive === false ? 'Отложен' : 'Активный';
-                    const added = data.createdAt?.toDate().toLocaleDateString('ru-RU') || '';
-                    const postponed = data.postponedUntil?.toDate().toLocaleDateString('ru-RU') || '';
+                    const added = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('ru-RU') : '';
+                    const postponed = data.postponedUntil?.toDate ? data.postponedUntil.toDate().toLocaleDateString('ru-RU') : '';
                     
-                    // Экранируем точку с запятой
                     const title = `"${(data.title || '').replace(/"/g, '""')}"`;
                     
                     csv += `${title};${status};${added};${postponed}\n`;
@@ -1637,7 +1696,7 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `cineroll-films-${new Date().toISOString().split('T')[0]}.csv`;
+                a.download = `cineroll-${currentSpace}-films-${new Date().toISOString().split('T')[0]}.csv`;
                 a.click();
                 URL.revokeObjectURL(url);
                 
@@ -1653,36 +1712,47 @@
         async function createFullBackup() {
             showLoading(true);
             try {
-                // Создаем бэкап всех коллекций
                 const backupData = {
                     timestamp: new Date().toISOString(),
-                    collections: {}
+                    spaces: {}
                 };
                 
-                // Получаем список всех коллекций
-                const collections = ['movies', 'deletedMovies', 'postponedMovies'];
+                const spaces = ['default', 'user1'];
                 
-                for (const collectionName of collections) {
-                    const snapshot = await db.collection(collectionName).get();
-                    backupData.collections[collectionName] = [];
+                for (const space of spaces) {
+                    // Временно сохраняем текущий префикс
+                    const collections = space === 'user1' 
+                        ? ['user1_movies', 'user1_deletedMovies', 'user1_postponedMovies']
+                        : ['movies', 'deletedMovies', 'postponedMovies'];
                     
-                    snapshot.forEach(doc => {
-                        backupData.collections[collectionName].push({
-                            id: doc.id,
-                            data: doc.data()
-                        });
-                    });
+                    backupData.spaces[space] = {};
+                    
+                    for (const collectionName of collections) {
+                        try {
+                            const snapshot = await db.collection(collectionName).get();
+                            backupData.spaces[space][collectionName] = [];
+                            
+                            snapshot.forEach(doc => {
+                                backupData.spaces[space][collectionName].push({
+                                    id: doc.id,
+                                    data: doc.data()
+                                });
+                            });
+                        } catch (e) {
+                            backupData.spaces[space][collectionName] = [];
+                        }
+                    }
                 }
                 
                 const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `cineroll-system-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.download = `cineroll-full-system-backup-${new Date().toISOString().split('T')[0]}.json`;
                 a.click();
                 URL.revokeObjectURL(url);
                 
-                showToast('Системный бэкап создан');
+                showToast('Полный системный бэкап создан (оба пространства)');
                 
             } catch (error) {
                 showToast('Ошибка создания бэкапа', 'error');
@@ -1701,7 +1771,6 @@
         function updateStatusChart() {
             const ctx = document.getElementById('statusChart').getContext('2d');
             
-            // Уничтожаем старый график
             if (statusChart) {
                 statusChart.destroy();
             }
@@ -1744,7 +1813,7 @@
                         },
                         title: {
                             display: true,
-                            text: 'Распределение фильмов по статусам',
+                            text: `Распределение фильмов (${currentSpace === 'default' ? 'Основной' : 'User1'})`,
                             color: '#4e8387',
                             font: {
                                 family: 'Nunito',
@@ -1760,12 +1829,10 @@
         function updateActivityChart() {
             const ctx = document.getElementById('activityChart').getContext('2d');
             
-            // Уничтожаем старый график
             if (activityChart) {
                 activityChart.destroy();
             }
             
-            // Группируем по дням
             const last7Days = [];
             for (let i = 6; i >= 0; i--) {
                 const date = new Date();
@@ -1773,7 +1840,6 @@
                 last7Days.push(date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }));
             }
             
-            // Считаем добавления по дням
             const addedData = [0, 0, 0, 0, 0, 0, 0];
             
             allMovies.forEach(movie => {
@@ -1815,7 +1881,7 @@
                         },
                         title: {
                             display: true,
-                            text: 'Активность добавления фильмов (7 дней)',
+                            text: `Активность добавления (${currentSpace === 'default' ? 'Основной' : 'User1'})`,
                             color: '#4e8387',
                             font: {
                                 family: 'Nunito',
@@ -1855,16 +1921,18 @@
         // ========== СИСТЕМНЫЕ ФУНКЦИИ ==========
         
         async function cleanupOldData() {
-            const confirmCleanup = confirm('Удалить фильмы, добавленные более 30 дней назад?');
+            const confirmCleanup = confirm(`Удалить фильмы пространства ${currentSpace}, добавленные более 30 дней назад?`);
             
             if (!confirmCleanup) return;
             
             showLoading(true);
             try {
+                const moviesCol = getCollection('movies');
+                const deletedCol = getCollection('deletedMovies');
                 const monthAgo = new Date();
                 monthAgo.setDate(monthAgo.getDate() - 30);
                 
-                const snapshot = await db.collection('movies')
+                const snapshot = await db.collection(moviesCol)
                     .where('createdAt', '<', monthAgo)
                     .get();
                 
@@ -1874,17 +1942,17 @@
                 }
                 
                 let count = 0;
-                snapshot.forEach(async doc => {
-                    await db.collection('deletedMovies').add({
+                for (const doc of snapshot.docs) {
+                    await db.collection(deletedCol).add({
                         ...doc.data(),
                         deletedAt: new Date(),
                         originalId: doc.id,
                         cleanupReason: 'old_data'
                     });
                     
-                    await db.collection('movies').doc(doc.id).delete();
+                    await db.collection(moviesCol).doc(doc.id).delete();
                     count++;
-                });
+                }
                 
                 showToast(`Удалено ${count} старых фильмов`);
                 await loadAllMovies();
@@ -1897,14 +1965,17 @@
         }
         
         function checkDatabase() {
-            const collections = ['movies', 'deletedMovies', 'postponedMovies'];
+            const collectionsToCheck = currentSpace === 'user1' 
+                ? ['user1_movies', 'user1_deletedMovies', 'user1_postponedMovies']
+                : ['movies', 'deletedMovies', 'postponedMovies'];
             let totalDocs = 0;
             
             showLoading(true);
             
-            // Проверяем каждую коллекцию
-            Promise.all(collections.map(collection => 
-                db.collection(collection).get().then(snap => snap.size)
+            Promise.all(collectionsToCheck.map(collection => 
+                db.collection(collection).get()
+                    .then(snap => snap.size)
+                    .catch(() => 0)
             )).then(sizes => {
                 totalDocs = sizes.reduce((a, b) => a + b, 0);
                 
@@ -1913,7 +1984,7 @@
                 document.getElementById('dbStatus').textContent = '✅ Исправна';
                 document.getElementById('dbStatus').style.color = '#75a744';
                 
-                showToast(`База данных проверена: ${totalDocs} записей`);
+                showToast(`База данных ${currentSpace} проверена: ${totalDocs} записей`);
                 
             }).catch(error => {
                 document.getElementById('dbStatus').textContent = '❌ Ошибка';
@@ -1935,13 +2006,15 @@
             
             showLoading(true);
             
-            db.collection('movies').add({
+            const moviesCol = getCollection('movies');
+            
+            db.collection(moviesCol).add({
                 title: title,
                 isActive: true,
                 createdAt: new Date(),
                 postponedUntil: null
             }).then(() => {
-                showToast('Фильм добавлен');
+                showToast(`Фильм добавлен в пространство ${currentSpace}`);
                 loadAllMovies();
             }).catch(error => {
                 showToast('Ошибка добавления фильма', 'error');
@@ -1968,17 +2041,31 @@
                 try {
                     const backupData = JSON.parse(event.target.result);
                     
-                    // Восстанавливаем фильмы
-                    if (backupData.collections?.movies) {
-                        for (const movie of backupData.collections.movies) {
-                            await db.collection('movies').doc(movie.id).set(movie.data);
+                    // Определяем, новый формат (с spaces) или старый
+                    if (backupData.spaces) {
+                        // Новый формат с пространствами
+                        for (const [space, collections] of Object.entries(backupData.spaces)) {
+                            for (const [collectionName, documents] of Object.entries(collections)) {
+                                for (const doc of documents) {
+                                    await db.collection(collectionName).doc(doc.id).set(doc.data);
+                                }
+                            }
                         }
-                    }
-                    
-                    // Восстанавливаем удаленные
-                    if (backupData.collections?.deletedMovies) {
-                        for (const movie of backupData.collections.deletedMovies) {
-                            await db.collection('deletedMovies').doc(movie.id).set(movie.data);
+                    } else {
+                        // Старый формат — восстанавливаем в текущее пространство
+                        const moviesCol = getCollection('movies');
+                        const deletedCol = getCollection('deletedMovies');
+                        
+                        if (backupData.movies) {
+                            for (const movie of backupData.movies) {
+                                await db.collection(moviesCol).doc(movie.id).set(movie);
+                            }
+                        }
+                        
+                        if (backupData.deletedMovies) {
+                            for (const movie of backupData.deletedMovies) {
+                                await db.collection(deletedCol).doc(movie.id).set(movie);
+                            }
                         }
                     }
                     
@@ -1999,26 +2086,21 @@
         // ========== ИНИЦИАЛИЗАЦИЯ ==========
         
         document.addEventListener('DOMContentLoaded', function() {
-            // Проверяем авторизацию
             checkAuth();
             
-            // Инициализируем Firebase
             if (!initFirebase()) {
                 showToast('Ошибка инициализации Firebase', 'error');
                 return;
             }
             
-            // Загружаем данные
             loadAllMovies();
             
-            // Автообновление каждые 30 секунд
             setInterval(() => {
                 if (!document.hidden) {
                     loadAllMovies();
                 }
             }, 30000);
             
-            // Обработчик видимости страницы
             document.addEventListener('visibilitychange', function() {
                 if (!document.hidden) {
                     loadAllMovies();
