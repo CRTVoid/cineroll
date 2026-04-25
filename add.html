@@ -7,7 +7,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
     <title>Добавить фильм</title>
-<!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">-->
     <style>
         * {
             box-sizing: border-box;
@@ -102,15 +101,6 @@
             font-family: Nunito;
             border: 1px solid #f5c6cb;
         }
-        .info-box {
-            background: #e9ecef;
-            padding: 15px;
-            font-family: Nunito;
-            border-radius: 10px;
-            margin-top: 30px;
-            font-size: 0.9em;
-            color: #495057;
-        }
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -146,35 +136,49 @@
             autocomplete="off"
             autofocus
         >
-<div class="group-btn">
-    <a href="index.html" class="back-btn">Назад</a>
-        <button class="submit-btn" id="save-btn">
-            Добавить
-        </button>
-</div>
-
-<!--
-        <div class="info-box">
-            <p><strong>Как это работает:</strong></p>
-            <p>1. Фильм появится в общем списке</p>
-            <p>2. Любой пользователь может выбрать случайный фильм</p>
-            <p>3. После выбора фильм автоматически удаляется из списка</p>
-            <p>⚠️ Пожалуйста, не добавляйте один фильм несколько раз</p>
+        <div class="group-btn">
+            <a href="index.html" class="back-btn" id="back-link">Назад</a>
+            <button class="submit-btn" id="save-btn">
+                Добавить
+            </button>
         </div>
--->
     </div>
 
     <!-- Firebase SDK -->
-    <!-- ВАЖНО: Используйте ЭТУ версию -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     
     <script>
         // ========== ОПРЕДЕЛЯЕМ ПРОСТРАНСТВО (ПРЕФИКС) ==========
-        const urlParams = new URLSearchParams(window.location.search);
-        const space = urlParams.get('space');
-        const prefix = space === 'user1' ? 'user1_' : '';
-        console.log("Текущее пространство:", space || "default", "| Префикс:", prefix || "(нет)");
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const spaceFromUrl = urlParams.get('space');
+
+            // Если space передан в URL — сохраняем в localStorage
+            if (spaceFromUrl) {
+                localStorage.setItem('cineroll_space', spaceFromUrl);
+                // Убираем параметр из URL
+                if (window.history.replaceState) {
+                    const cleanUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+            }
+
+            // Берём space из localStorage
+            const space = localStorage.getItem('cineroll_space') || '';
+            window.__CINEROLL_PREFIX = space === 'user1' ? 'user1_' : '';
+            console.log("Текущее пространство:", space || "default", "| Префикс:", window.__CINEROLL_PREFIX || "(нет)");
+
+            // Обновляем ссылку "Назад", чтобы она вела на index.html с тем же пространством
+            document.addEventListener('DOMContentLoaded', function() {
+                const backLink = document.getElementById('back-link');
+                if (backLink && space) {
+                    backLink.href = 'index.html?space=' + space;
+                }
+            });
+        })();
+
+        const prefix = window.__CINEROLL_PREFIX;
 
         // ========== ВАШ КОНФИГ FIREBASE ==========
         const firebaseConfig = {
@@ -214,7 +218,6 @@
             const titleInput = document.getElementById('movieTitle');
             const title = titleInput.value.trim();
             
-            // Проверки
             if (!title) {
                 showMessage("Введите название фильма", "error");
                 return;
@@ -231,16 +234,13 @@
             }
             
             try {
-                // Добавляем фильм в базу
                 await db.collection(prefix + 'movies').add({
                     title: title,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                // Показываем успех
                 showMessage(`Фильм "${title}" успешно добавлен!`, "success");
                 
-                // Очищаем поле ввода
                 titleInput.value = '';
                 titleInput.focus();
                 
@@ -259,7 +259,6 @@
             messageDiv.className = `message ${type}`;
             messageDiv.style.display = 'block';
             
-            // Автоматически скрыть через 5 секунд
             setTimeout(() => {
                 messageDiv.style.display = 'none';
             }, 5000);
@@ -269,15 +268,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log("Страница добавления фильма");
             
-            // Инициализируем Firebase
             if (!initFirebase()) {
                 showMessage("Не удалось подключиться к базе данных", "error");
             }
             
-            // Обработчик кнопки
             document.getElementById('save-btn').addEventListener('click', addMovie);
             
-            // Обработчик Enter
             document.getElementById('movieTitle').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     addMovie();
@@ -288,5 +284,4 @@
         });
     </script>
 </body>
-
 </html>
