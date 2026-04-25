@@ -170,6 +170,12 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     
     <script>
+        // ========== ОПРЕДЕЛЯЕМ ПРОСТРАНСТВО (ПРЕФИКС) ==========
+        const urlParams = new URLSearchParams(window.location.search);
+        const space = urlParams.get('space');
+        const prefix = space === 'user1' ? 'user1_' : '';
+        console.log("Текущее пространство:", space || "default", "| Префикс:", prefix || "(нет)");
+
         // ========== ВАШ КОНФИГ FIREBASE ==========
         const firebaseConfig = {
             apiKey: "AIzaSyAOvoLXDIDZ2vVIqHLG8utXYA07yiheTkI",
@@ -226,7 +232,7 @@
             
             try {
                 // Добавляем фильм в базу
-                await db.collection('movies').add({
+                await db.collection(prefix + 'movies').add({
                     title: title,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -284,5 +290,3 @@
 </body>
 
 </html>
-
-
