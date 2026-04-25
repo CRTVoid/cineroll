@@ -149,19 +149,29 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     
     <script>
-                        // ========== ОПРЕДЕЛЯЕМ ПРОСТРАНСТВО (ПРЕФИКС) ==========
+                                // ========== ОПРЕДЕЛЯЕМ ПРОСТРАНСТВО (ПРЕФИКС) ==========
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
             const spaceFromUrl = urlParams.get('space');
 
-            // ТОЛЬКО если в URL явно указан user1 — используем его
-            // Иначе всегда default
-            const space = (spaceFromUrl === 'user1') ? 'user1' : 'default';
-            
+            // Если space передан в URL — сохраняем в localStorage
+            if (spaceFromUrl === 'user1') {
+                localStorage.setItem('cineroll_space', 'user1');
+            }
+
+            // Берём space: сначала из URL, потом из localStorage, иначе default
+            let space = spaceFromUrl;
+            if (!space) {
+                space = localStorage.getItem('cineroll_space');
+            }
+            if (!space || space !== 'user1') {
+                space = 'default';
+            }
+
             window.__CINEROLL_PREFIX = space === 'user1' ? 'user1_' : '';
             console.log("Текущее пространство:", space, "| Префикс:", window.__CINEROLL_PREFIX || "(нет)");
 
-            // Обновляем ссылку "Назад", чтобы она вела на index.html с тем же пространством
+            // Обновляем ссылку "Назад"
             document.addEventListener('DOMContentLoaded', function() {
                 const backLink = document.getElementById('back-link');
                 if (backLink && space === 'user1') {
