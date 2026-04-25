@@ -149,7 +149,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     
     <script>
-                                // ========== ОПРЕДЕЛЯЕМ ПРОСТРАНСТВО (ПРЕФИКС) ==========
+                                        // ========== ОПРЕДЕЛЯЕМ ПРОСТРАНСТВО (ПРЕФИКС) ==========
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
             const spaceFromUrl = urlParams.get('space');
@@ -157,6 +157,7 @@
             // Если space передан в URL — сохраняем в localStorage
             if (spaceFromUrl === 'user1') {
                 localStorage.setItem('cineroll_space', 'user1');
+                // НЕ убираем параметр из URL!
             }
 
             // Берём space: сначала из URL, потом из localStorage, иначе default
@@ -181,7 +182,7 @@
         })();
 
         const prefix = window.__CINEROLL_PREFIX;
-
+        
         // ========== ВАШ КОНФИГ FIREBASE ==========
         const firebaseConfig = {
             apiKey: "AIzaSyAOvoLXDIDZ2vVIqHLG8utXYA07yiheTkI",
