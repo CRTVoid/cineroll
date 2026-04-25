@@ -403,26 +403,18 @@
             const urlParams = new URLSearchParams(window.location.search);
             const spaceFromUrl = urlParams.get('space');
 
-            // Если space передан в URL — сохраняем в localStorage
-            if (spaceFromUrl) {
-                localStorage.setItem('cineroll_space', spaceFromUrl);
-                // Убираем параметр из URL, чтобы ссылка была чистой
-                if (window.history.replaceState) {
-                    const cleanUrl = window.location.pathname;
-                    window.history.replaceState({}, document.title, cleanUrl);
-                }
-            }
-
-            // Берём space из localStorage или оставляем пустым (default)
-            const space = localStorage.getItem('cineroll_space') || '';
+            // ТОЛЬКО если в URL явно указан user1 — используем его
+            // Иначе всегда default (ваше пространство)
+            const space = (spaceFromUrl === 'user1') ? 'user1' : 'default';
+            
             window.__CINEROLL_PREFIX = space === 'user1' ? 'user1_' : '';
-            console.log("Текущее пространство:", space || "default", "| Префикс:", window.__CINEROLL_PREFIX || "(нет)");
+            console.log("Текущее пространство:", space, "| Префикс:", window.__CINEROLL_PREFIX || "(нет)");
 
             // Обновляем ссылку "Добавить", чтобы она вела на add.html с тем же пространством
             document.addEventListener('DOMContentLoaded', function() {
                 const addLink = document.getElementById('add-link');
-                if (addLink && space) {
-                    addLink.href = 'add.html?space=' + space;
+                if (addLink && space === 'user1') {
+                    addLink.href = 'add.html?space=user1';
                 }
             });
         })();
