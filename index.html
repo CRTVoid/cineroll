@@ -342,7 +342,7 @@
         <button class="btn-big" id="random-btn">
             Случайный фильм
             </button>
-        <a class="add-btn" href="add.html">
+        <a class="add-btn" id="add-link" href="add.html">
         <img class="add-btn" src="add-btn.svg">
         </a>
         </div>
@@ -399,10 +399,35 @@
     
     <script>
         // ========== ОПРЕДЕЛЯЕМ ПРОСТРАНСТВО (ПРЕФИКС) ==========
-        const urlParams = new URLSearchParams(window.location.search);
-        const space = urlParams.get('space');
-        const prefix = space === 'user1' ? 'user1_' : '';
-        console.log("Текущее пространство:", space || "default", "| Префикс:", prefix || "(нет)");
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const spaceFromUrl = urlParams.get('space');
+
+            // Если space передан в URL — сохраняем в localStorage
+            if (spaceFromUrl) {
+                localStorage.setItem('cineroll_space', spaceFromUrl);
+                // Убираем параметр из URL, чтобы ссылка была чистой
+                if (window.history.replaceState) {
+                    const cleanUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+            }
+
+            // Берём space из localStorage или оставляем пустым (default)
+            const space = localStorage.getItem('cineroll_space') || '';
+            window.__CINEROLL_PREFIX = space === 'user1' ? 'user1_' : '';
+            console.log("Текущее пространство:", space || "default", "| Префикс:", window.__CINEROLL_PREFIX || "(нет)");
+
+            // Обновляем ссылку "Добавить", чтобы она вела на add.html с тем же пространством
+            document.addEventListener('DOMContentLoaded', function() {
+                const addLink = document.getElementById('add-link');
+                if (addLink && space) {
+                    addLink.href = 'add.html?space=' + space;
+                }
+            });
+        })();
+
+        const prefix = window.__CINEROLL_PREFIX;
 
         // ========== ВАШ КОНФИГ FIREBASE ==========
         const firebaseConfig = {
@@ -417,9 +442,9 @@
         // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         let db = null;
         let currentRandomMovie = null;
-        let lastRandomMovieId = null; // Для предотвращения повторного выпадения одного фильма
-        let activeMoviesCache = []; // Кэш активных фильмов
-        let availableMoviesCache = []; // Фильмы доступные для показа (исключая только что показанные)
+        let lastRandomMovieId = null;
+        let activeMoviesCache = [];
+        let availableMoviesCache = [];
         
         // ========== ИНИЦИАЛИЗАЦИЯ FIREBASE ==========
         function initFirebase() {
@@ -441,13 +466,11 @@ async function updateCounters() {
     if (!db) return;
     
     try {
-        // Получаем ВСЕ фильмы
         const snapshot = await db.collection(prefix + 'movies').get();
         
         let activeCount = 0;
         let postponedCount = 0;
         
-        // Считаем активные и отложенные фильмы
         snapshot.forEach(doc => {
             const movieData = doc.data();
             if (movieData.isActive === false) {
@@ -457,15 +480,12 @@ async function updateCounters() {
             }
         });
         
-        // Получаем элементы счетчиков
         const activeCounter = document.getElementById('active-counter');
         const postponedCounter = document.getElementById('postponed-counter');
         
-        // Обновляем текст счетчиков
         activeCounter.textContent = activeCount;
         postponedCounter.textContent = postponedCount;
         
-        // Добавляем/удаляем класс zero в зависимости от значения
         if (activeCount === 0) {
             activeCounter.classList.add('zero');
         } else {
@@ -491,7 +511,6 @@ async function updateCounters() {
             
             if (!scrollToTopBtn) return;
             
-            // Показать/скрыть кнопку при прокрутке
             window.addEventListener('scroll', function() {
                 if (window.pageYOffset > 300 || document.documentElement.scrollTop > 300) {
                     scrollToTopBtn.style.display = 'flex';
@@ -500,7 +519,6 @@ async function updateCounters() {
                 }
             });
             
-            // Плавная прокрутка при клике
             scrollToTopBtn.addEventListener('click', function() {
                 window.scrollTo({
                     top: 0,
@@ -508,11 +526,10 @@ async function updateCounters() {
                 });
             });
             
-            // Инициализация - скрыть кнопку при загрузке
             scrollToTopBtn.style.display = 'none';
         }
 
-        // ========== ПОЛУЧИТЬ СЛУЧАЙНЫЙ ФИЛЬМ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ==========
+        // ========== ПОЛУЧИТЬ СЛУЧАЙНЫЙ ФИЛЬМ ==========
 async function getRandomMovie() {
     if (!db) {
         showError("Ошибка подключения к базе данных");
@@ -526,7 +543,6 @@ async function getRandomMovie() {
     resultDiv.innerHTML = '';
     
     try {
-        // Получаем ВСЕ фильмы
         const snapshot = await db.collection(prefix + 'movies').get();
         
         if (snapshot.empty) {
@@ -546,9 +562,6 @@ async function getRandomMovie() {
             return;
         }
         
-        const now = new Date();
-        
-        // Фильтруем ТОЛЬКО активные фильмы
         const activeMovies = [];
         snapshot.forEach(doc => {
             const movieData = doc.data();
@@ -578,13 +591,10 @@ async function getRandomMovie() {
             return;
         }
         
-        // Обновляем кэш активных фильмов
         activeMoviesCache = activeMovies;
         
-        // Создаем массив для выбора
         let moviesForSelection = [...activeMovies];
         
-        // Исключаем последний показанный фильм только если есть другие варианты
         if (lastRandomMovieId && moviesForSelection.length > 1) {
             const filteredMovies = moviesForSelection.filter(movie => movie.id !== lastRandomMovieId);
             if (filteredMovies.length > 0) {
@@ -592,18 +602,15 @@ async function getRandomMovie() {
             }
         }
         
-        // Генерируем случайный индекс
         const randomIndex = Math.floor(Math.random() * moviesForSelection.length);
         const randomMovie = moviesForSelection[randomIndex];
         
         currentRandomMovie = randomMovie;
         lastRandomMovieId = randomMovie.id;
         
-        // Формируем URL для поиска
         const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(randomMovie.title)}`;
         const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(randomMovie.title + ' фильм')}&section=search`;
         
-        // Создаем HTML с кнопками
         resultDiv.innerHTML = `
             <div style="animation: fadeIn 0.5s;">
                 <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${randomMovie.title}</div>
@@ -644,26 +651,20 @@ async function watchMovie(movieId, movieTitle, platform, url) {
     
     if (confirm(`Открыть ${platform === 'kinopoisk' ? 'КиноПоиск' : 'VK'} и удалить фильм "${movieTitle}" из списка?`)) {
         try {
-            // 1. СРАЗУ открываем ссылку - это должно быть первым действием на iOS
             const newWindow = window.open(url, '_blank');
             
-            // 2. Проверяем, открылось ли окно (на iOS может быть заблокировано)
             if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-                // Если окно заблокировано, показываем сообщение
                 alert("Всплывающие окна заблокированы. Разрешите всплывающие окна для этого сайта в настройках Safari.");
-                // Можно предложить альтернативу - скопировать ссылку
                 if (confirm("Хотите скопировать ссылку для поиска?")) {
                     navigator.clipboard.writeText(url);
                     alert("Ссылка скопирована в буфер обмена!");
                 }
             }
             
-            // 3. Теперь удаляем фильм в фоне
             setTimeout(async () => {
                 try {
                     await db.collection(prefix + 'movies').doc(movieId).delete();
                     
-                    // Также удаляем все записи об этом фильме из postponedMovies
                     const postponedSnapshot = await db.collection(prefix + 'postponedMovies')
                         .where('movieId', '==', movieId)
                         .get();
@@ -676,25 +677,19 @@ async function watchMovie(movieId, movieTitle, platform, url) {
                         await Promise.all(deletePromises);
                     }
                     
-                    // Обновляем кэш
                     activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
                     availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
                     
-                    // Обновляем счетчики
                     updateCounters();
-                    
-                    // Обновляем списки
                     loadMovieList();
                     loadPostponedMovies();
                     
-                    // ОБНОВЛЯЕМ СТРАНИЦУ СРАЗУ ПОСЛЕ УДАЛЕНИЯ
-            setTimeout(() => {
-                location.reload();
-            }, 500);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
                     
                 } catch (error) {
                     console.error("Ошибка удаления фильма:", error);
-                    // Не показываем alert, чтобы не беспокоить пользователя
                 }
             }, 100);
             
@@ -712,18 +707,15 @@ async function postponeMovie(movieId, movieTitle) {
     loading.style.display = 'block';
     
     try {
-        // Получаем текущее время
         const now = new Date();
-        const returnTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24 часа
+        const returnTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
         
-        // 1. Обновляем фильм: помечаем как неактивный и устанавливаем время возврата
         await db.collection(prefix + 'movies').doc(movieId).update({
             isActive: false,
             postponedUntil: returnTime,
             postponedAt: now
         });
         
-        // 2. Добавляем в коллекцию отложенных для истории
         await db.collection(prefix + 'postponedMovies').add({
             movieId: movieId,
             title: movieTitle,
@@ -732,14 +724,10 @@ async function postponeMovie(movieId, movieTitle) {
             returned: false
         });
         
-        // 3. Обновляем кэш
         activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
         availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
         
-        // 4. Обновляем счетчики
         updateCounters();
-        
-        // 5. Обновляем страницу
         location.reload();
         
     } catch (error) {
@@ -758,7 +746,6 @@ async function postponeMovie(movieId, movieTitle) {
             listElement.innerHTML = '<li style="text-align: center; color: #666;">Загрузка...</li>';
             
             try {
-                // Получаем ВСЕ фильмы
                 const snapshot = await db.collection(prefix + 'movies').get();
                 
                 listElement.innerHTML = '';
@@ -781,7 +768,6 @@ async function postponeMovie(movieId, movieTitle) {
                     });
                 });
                 
-                // Фильтруем активные фильмы на клиенте
                 const activeMovies = movies.filter(movie => movie.isActive !== false);
                 
                 if (activeMovies.length === 0) {
@@ -793,7 +779,6 @@ async function postponeMovie(movieId, movieTitle) {
                     return;
                 }
                 
-                // Сортируем на клиенте по дате добавления (новые сначала)
                 activeMovies.sort((a, b) => {
                     const dateA = a.createdAt?.toDate() || new Date(0);
                     const dateB = b.createdAt?.toDate() || new Date(0);
@@ -817,7 +802,6 @@ async function postponeMovie(movieId, movieTitle) {
                     listElement.appendChild(li);
                 });
                 
-                // Добавляем обработчики удаления
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const movieId = this.getAttribute('data-id');
@@ -843,7 +827,6 @@ async function postponeMovie(movieId, movieTitle) {
             listElement.innerHTML = '<li style="text-align: center; color: #666;">Загрузка...</li>';
             
             try {
-                // Получаем ВСЕ фильмы
                 const snapshot = await db.collection(prefix + 'movies').get();
                 
                 listElement.innerHTML = '';
@@ -866,7 +849,6 @@ async function postponeMovie(movieId, movieTitle) {
                     });
                 });
                 
-                // Фильтруем отложенные фильмы на клиенте
                 const postponedMovies = movies.filter(movie => movie.isActive === false);
                 
                 if (postponedMovies.length === 0) {
@@ -880,7 +862,6 @@ async function postponeMovie(movieId, movieTitle) {
                 
                 const now = new Date();
                 
-                // Сортируем по времени возврата (сначала те, что раньше вернутся)
                 postponedMovies.sort((a, b) => {
                     const dateA = a.postponedUntil?.toDate() || new Date(0);
                     const dateB = b.postponedUntil?.toDate() || new Date(0);
@@ -893,7 +874,7 @@ async function postponeMovie(movieId, movieTitle) {
                     const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
                     const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
                     
-                    const canReturn = timeLeft === 0; // Можно вернуть только когда время вышло
+                    const canReturn = timeLeft === 0;
                     
                     const li = document.createElement('li');
                     li.className = 'movie-item';
@@ -936,7 +917,6 @@ async function postponeMovie(movieId, movieTitle) {
                     listElement.appendChild(li);
                 });
                 
-                // Добавляем обработчики для кнопки "Вернуть сейчас" (только для активных кнопок)
                 document.querySelectorAll('.delete-btn[data-postponed="true"]:not([disabled])').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const movieId = this.getAttribute('data-id');
@@ -959,7 +939,6 @@ async function postponeMovie(movieId, movieTitle) {
             if (!db) return;
             
             try {
-                // Получаем данные фильма
                 const movieDoc = await db.collection(prefix + 'movies').doc(movieId).get();
                 if (!movieDoc.exists) return;
                 
@@ -967,7 +946,6 @@ async function postponeMovie(movieId, movieTitle) {
                 const returnTime = movieData.postponedUntil?.toDate();
                 const now = new Date();
                 
-                // Проверяем, истекло ли время откладывания
                 if (returnTime && returnTime > now) {
                     const timeLeft = returnTime - now;
                     const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
@@ -978,13 +956,11 @@ async function postponeMovie(movieId, movieTitle) {
                 }
                 
                 if (confirm("Вернуть этот фильм в активный список сейчас?")) {
-                    // 1. Обновляем фильм в основной коллекции
                     await db.collection(prefix + 'movies').doc(movieId).update({
                         isActive: true,
                         postponedUntil: null
                     });
                     
-                    // 2. Удаляем все записи об этом фильме из postponedMovies
                     const postponedSnapshot = await db.collection(prefix + 'postponedMovies')
                         .where('movieId', '==', movieId)
                         .where('returned', '==', false)
@@ -996,14 +972,10 @@ async function postponeMovie(movieId, movieTitle) {
                         });
                     }
                     
-                    // 3. Обновляем счетчики
                     updateCounters();
-                    
-                    // 4. Обновляем списки
                     loadMovieList();
                     loadPostponedMovies();
                     
-                    // 5. Показываем уведомление
                     alert("Фильм успешно возвращен в активный список!");
                 }
                 
@@ -1021,19 +993,16 @@ async function postponeMovie(movieId, movieTitle) {
             loading.style.display = 'block';
             
             try {
-                // Получаем ВСЕ фильмы
                 const snapshot = await db.collection(prefix + 'movies').get();
                 
                 const now = new Date();
                 let count = 0;
                 
-                // Проходим по всем фильмам и проверяем, какие пора вернуть
                 const updates = [];
                 snapshot.forEach(doc => {
                     const movie = doc.data();
                     const returnTime = movie.postponedUntil?.toDate();
                     
-                    // Если фильм отложен и время возврата наступило
                     if (movie.isActive === false && returnTime && returnTime <= now) {
                         updates.push({
                             id: doc.id,
@@ -1048,15 +1017,12 @@ async function postponeMovie(movieId, movieTitle) {
                     return;
                 }
                 
-                // Обновляем все фильмы, которые пора вернуть
                 for (const update of updates) {
-                    // 1. Обновляем фильм в основной коллекции
                     await db.collection(prefix + 'movies').doc(update.id).update({
                         isActive: true,
                         postponedUntil: null
                     });
                     
-                    // 2. Удаляем все записи об этом фильме из postponedMovies
                     const postponedSnapshot = await db.collection(prefix + 'postponedMovies')
                         .where('movieId', '==', update.id)
                         .where('returned', '==', false)
@@ -1071,10 +1037,7 @@ async function postponeMovie(movieId, movieTitle) {
                 
                 alert(`Возвращено ${count} фильм(ов) в активный список!`);
                 
-                // Обновляем счетчики
                 updateCounters();
-                
-                // Обновляем списки и показываем случайный фильм
                 loadMovieList();
                 loadPostponedMovies();
                 await getRandomMovie();
@@ -1093,10 +1056,8 @@ async function postponeMovie(movieId, movieTitle) {
             
             if (confirm("Удалить этот фильм из списка?")) {
                 try {
-                    // Удаляем фильм из основной коллекции
                     await db.collection(prefix + 'movies').doc(movieId).delete();
                     
-                    // Также удаляем все записи об этом фильме из postponedMovies
                     const postponedSnapshot = await db.collection(prefix + 'postponedMovies')
                         .where('movieId', '==', movieId)
                         .get();
@@ -1107,14 +1068,10 @@ async function postponeMovie(movieId, movieTitle) {
                         });
                     }
                     
-                    // Обновляем кэш
                     activeMoviesCache = activeMoviesCache.filter(movie => movie.id !== movieId);
                     availableMoviesCache = availableMoviesCache.filter(movie => movie.id !== movieId);
                     
-                    // Обновляем счетчики
                     updateCounters();
-                    
-                    // Обновляем списки
                     loadMovieList();
                     loadPostponedMovies();
                     
@@ -1127,7 +1084,6 @@ async function postponeMovie(movieId, movieTitle) {
         // ========== ИНИЦИАЛИЗИРОВАТЬ БАЗУ ДАННЫХ ==========
         async function initializeDatabase() {
             try {
-                // Проверяем, нужно ли обновить структуру существующих фильмов
                 const snapshot = await db.collection(prefix + 'movies').limit(1).get();
                 
                 if (!snapshot.empty) {
@@ -1136,7 +1092,6 @@ async function postponeMovie(movieId, movieTitle) {
                     
                     allMovies.forEach(doc => {
                         const movieData = doc.data();
-                        // Если нет поля isActive, добавляем его
                         if (movieData.isActive === undefined) {
                             updates.push(
                                 db.collection(prefix + 'movies').doc(doc.id).update({
@@ -1147,7 +1102,6 @@ async function postponeMovie(movieId, movieTitle) {
                         }
                     });
                     
-                    // Выполняем все обновления
                     if (updates.length > 0) {
                         await Promise.all(updates);
                         console.log(`Обновлено ${updates.length} фильмов`);
@@ -1160,7 +1114,6 @@ async function postponeMovie(movieId, movieTitle) {
 
         // ========== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ==========
         function switchTab(tabName) {
-            // Обновляем кнопки вкладок
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.dataset.tab === tabName) {
@@ -1168,7 +1121,6 @@ async function postponeMovie(movieId, movieTitle) {
                 }
             });
             
-            // Показываем соответствующую вкладку
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
@@ -1189,16 +1141,13 @@ async function postponeMovie(movieId, movieTitle) {
             const button = document.getElementById('toggle-list-btn');
             
             if (container.style.display === 'block') {
-                // Скрываем список
                 container.style.display = 'none';
                 tabButtons.style.display = 'none';
                 button.textContent = 'Показать список фильмов';
             } else {
-                // Показываем список
                 container.style.display = 'block';
                 tabButtons.style.display = 'flex';
                 button.textContent = 'Скрыть список';
-                // Загружаем активные фильмы при открытии
                 switchTab('active');
                 loadMovieList();
             }
@@ -1230,31 +1179,23 @@ async function postponeMovie(movieId, movieTitle) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log("Запуск CineRoll...");
     
-    // Инициализируем Firebase
     if (!initFirebase()) {
         showError("Не удалось подключиться к базе данных");
         return;
     }
     
-    // Инициализируем базу данных
     initializeDatabase();
-    
-    // Инициализируем счетчики (сразу после инициализации Firebase)
     updateCounters();
     
-    // Назначаем обработчики
     document.getElementById('random-btn').addEventListener('click', getRandomMovie);
     document.getElementById('toggle-list-btn').addEventListener('click', toggleMovieList);
     
-    // Обработчик для клика на логотип - обновление страницы
     document.querySelector('.logo').addEventListener('click', function() {
         location.reload();
     });
     
-    // Инициализируем кнопку "Наверх"
     initScrollToTopButton();
     
-    // Обработчики для вкладок
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             switchTab(this.dataset.tab);
@@ -1264,7 +1205,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("CineRoll готов к работе!");
 });
         
-        // Функция для отслеживания действий
         function trackAction(action, movieTitle) {
             console.log(`Действие: ${action}, Фильм: ${movieTitle}`);
         }
