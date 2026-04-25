@@ -398,6 +398,12 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     
     <script>
+        // ========== ОПРЕДЕЛЯЕМ ПРОСТРАНСТВО (ПРЕФИКС) ==========
+        const urlParams = new URLSearchParams(window.location.search);
+        const space = urlParams.get('space');
+        const prefix = space === 'user1' ? 'user1_' : '';
+        console.log("Текущее пространство:", space || "default", "| Префикс:", prefix || "(нет)");
+
         // ========== ВАШ КОНФИГ FIREBASE ==========
         const firebaseConfig = {
             apiKey: "AIzaSyAOvoLXDIDZ2vVIqHLG8utXYA07yiheTkI",
@@ -436,7 +442,7 @@ async function updateCounters() {
     
     try {
         // Получаем ВСЕ фильмы
-        const snapshot = await db.collection('movies').get();
+        const snapshot = await db.collection(prefix + 'movies').get();
         
         let activeCount = 0;
         let postponedCount = 0;
@@ -521,7 +527,7 @@ async function getRandomMovie() {
     
     try {
         // Получаем ВСЕ фильмы
-        const snapshot = await db.collection('movies').get();
+        const snapshot = await db.collection(prefix + 'movies').get();
         
         if (snapshot.empty) {
             resultDiv.innerHTML = `
@@ -655,17 +661,17 @@ async function watchMovie(movieId, movieTitle, platform, url) {
             // 3. Теперь удаляем фильм в фоне
             setTimeout(async () => {
                 try {
-                    await db.collection('movies').doc(movieId).delete();
+                    await db.collection(prefix + 'movies').doc(movieId).delete();
                     
                     // Также удаляем все записи об этом фильме из postponedMovies
-                    const postponedSnapshot = await db.collection('postponedMovies')
+                    const postponedSnapshot = await db.collection(prefix + 'postponedMovies')
                         .where('movieId', '==', movieId)
                         .get();
                     
                     if (!postponedSnapshot.empty) {
                         const deletePromises = [];
                         postponedSnapshot.forEach(doc => {
-                            deletePromises.push(db.collection('postponedMovies').doc(doc.id).delete());
+                            deletePromises.push(db.collection(prefix + 'postponedMovies').doc(doc.id).delete());
                         });
                         await Promise.all(deletePromises);
                     }
@@ -711,14 +717,14 @@ async function postponeMovie(movieId, movieTitle) {
         const returnTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24 часа
         
         // 1. Обновляем фильм: помечаем как неактивный и устанавливаем время возврата
-        await db.collection('movies').doc(movieId).update({
+        await db.collection(prefix + 'movies').doc(movieId).update({
             isActive: false,
             postponedUntil: returnTime,
             postponedAt: now
         });
         
         // 2. Добавляем в коллекцию отложенных для истории
-        await db.collection('postponedMovies').add({
+        await db.collection(prefix + 'postponedMovies').add({
             movieId: movieId,
             title: movieTitle,
             postponedAt: now,
@@ -753,7 +759,7 @@ async function postponeMovie(movieId, movieTitle) {
             
             try {
                 // Получаем ВСЕ фильмы
-                const snapshot = await db.collection('movies').get();
+                const snapshot = await db.collection(prefix + 'movies').get();
                 
                 listElement.innerHTML = '';
                 
@@ -838,7 +844,7 @@ async function postponeMovie(movieId, movieTitle) {
             
             try {
                 // Получаем ВСЕ фильмы
-                const snapshot = await db.collection('movies').get();
+                const snapshot = await db.collection(prefix + 'movies').get();
                 
                 listElement.innerHTML = '';
                 
@@ -954,7 +960,7 @@ async function postponeMovie(movieId, movieTitle) {
             
             try {
                 // Получаем данные фильма
-                const movieDoc = await db.collection('movies').doc(movieId).get();
+                const movieDoc = await db.collection(prefix + 'movies').doc(movieId).get();
                 if (!movieDoc.exists) return;
                 
                 const movieData = movieDoc.data();
@@ -973,20 +979,20 @@ async function postponeMovie(movieId, movieTitle) {
                 
                 if (confirm("Вернуть этот фильм в активный список сейчас?")) {
                     // 1. Обновляем фильм в основной коллекции
-                    await db.collection('movies').doc(movieId).update({
+                    await db.collection(prefix + 'movies').doc(movieId).update({
                         isActive: true,
                         postponedUntil: null
                     });
                     
                     // 2. Удаляем все записи об этом фильме из postponedMovies
-                    const postponedSnapshot = await db.collection('postponedMovies')
+                    const postponedSnapshot = await db.collection(prefix + 'postponedMovies')
                         .where('movieId', '==', movieId)
                         .where('returned', '==', false)
                         .get();
                     
                     if (!postponedSnapshot.empty) {
                         postponedSnapshot.forEach(async (doc) => {
-                            await db.collection('postponedMovies').doc(doc.id).delete();
+                            await db.collection(prefix + 'postponedMovies').doc(doc.id).delete();
                         });
                     }
                     
@@ -1016,7 +1022,7 @@ async function postponeMovie(movieId, movieTitle) {
             
             try {
                 // Получаем ВСЕ фильмы
-                const snapshot = await db.collection('movies').get();
+                const snapshot = await db.collection(prefix + 'movies').get();
                 
                 const now = new Date();
                 let count = 0;
@@ -1045,20 +1051,20 @@ async function postponeMovie(movieId, movieTitle) {
                 // Обновляем все фильмы, которые пора вернуть
                 for (const update of updates) {
                     // 1. Обновляем фильм в основной коллекции
-                    await db.collection('movies').doc(update.id).update({
+                    await db.collection(prefix + 'movies').doc(update.id).update({
                         isActive: true,
                         postponedUntil: null
                     });
                     
                     // 2. Удаляем все записи об этом фильме из postponedMovies
-                    const postponedSnapshot = await db.collection('postponedMovies')
+                    const postponedSnapshot = await db.collection(prefix + 'postponedMovies')
                         .where('movieId', '==', update.id)
                         .where('returned', '==', false)
                         .get();
                     
                     if (!postponedSnapshot.empty) {
                         postponedSnapshot.forEach(async (doc) => {
-                            await db.collection('postponedMovies').doc(doc.id).delete();
+                            await db.collection(prefix + 'postponedMovies').doc(doc.id).delete();
                         });
                     }
                 }
@@ -1088,16 +1094,16 @@ async function postponeMovie(movieId, movieTitle) {
             if (confirm("Удалить этот фильм из списка?")) {
                 try {
                     // Удаляем фильм из основной коллекции
-                    await db.collection('movies').doc(movieId).delete();
+                    await db.collection(prefix + 'movies').doc(movieId).delete();
                     
                     // Также удаляем все записи об этом фильме из postponedMovies
-                    const postponedSnapshot = await db.collection('postponedMovies')
+                    const postponedSnapshot = await db.collection(prefix + 'postponedMovies')
                         .where('movieId', '==', movieId)
                         .get();
                     
                     if (!postponedSnapshot.empty) {
                         postponedSnapshot.forEach(async (doc) => {
-                            await db.collection('postponedMovies').doc(doc.id).delete();
+                            await db.collection(prefix + 'postponedMovies').doc(doc.id).delete();
                         });
                     }
                     
@@ -1122,18 +1128,18 @@ async function postponeMovie(movieId, movieTitle) {
         async function initializeDatabase() {
             try {
                 // Проверяем, нужно ли обновить структуру существующих фильмов
-                const snapshot = await db.collection('movies').limit(1).get();
+                const snapshot = await db.collection(prefix + 'movies').limit(1).get();
                 
                 if (!snapshot.empty) {
                     const updates = [];
-                    const allMovies = await db.collection('movies').get();
+                    const allMovies = await db.collection(prefix + 'movies').get();
                     
                     allMovies.forEach(doc => {
                         const movieData = doc.data();
                         // Если нет поля isActive, добавляем его
                         if (movieData.isActive === undefined) {
                             updates.push(
-                                db.collection('movies').doc(doc.id).update({
+                                db.collection(prefix + 'movies').doc(doc.id).update({
                                     isActive: true,
                                     postponedUntil: null
                                 })
@@ -1278,12 +1284,3 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
