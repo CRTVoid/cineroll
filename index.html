@@ -407,39 +407,7 @@
                 padding: 6px 16px;
                 font-size: 0.8em;
             }
-        }
-        /* Стили для спойлера описания */
-.description-spoiler {
-    margin: 10px 0;
-}
-
-.description-spoiler summary {
-    cursor: pointer;
-    color: #75a744ff;
-    font-family: Nunito;
-    font-weight: 700;
-    font-size: 0.9em;
-    padding: 8px 0;
-    user-select: none;
-    display: inline-block;
-}
-
-.description-spoiler summary:hover {
-    color: #8bc95a;
-}
-
-.description-spoiler summary::-webkit-details-marker {
-    color: #75a744ff;
-}
-
-.description-spoiler .description-text {
-    color: #ddd;
-    font-size: 0.9em;
-    padding: 10px 0;
-    line-height: 1.5;
-    text-align: left;
-}
-        
+        }        
     </style>
 </head>
 <body>
@@ -739,8 +707,9 @@
                     <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title-kinopoisk">${movie.title}</div>
                     <div style="font-size: 0.9em; color: #b3b3b3ff; margin-bottom: 5px;">${infoString}</div>
                     <div style="font-size: 0.8em; color: #b3b3b3ff; margin-bottom: 10px;">${movie.genres}</div>
-                    <details>
-                    <div style="font-size: 0.9em; color: #ddd; margin-bottom: 15px; padding: 0 10px;">${movie.description}</div>
+                    <details style="margin: 10px 0;">
+                    <summary style="cursor: pointer; color: #75a744ff; font-weight: 700; font-size: 0.9em;">Описание фильма</summary>
+                    <div style="color: #ddd; font-size: 0.9em; padding: 10px 0; text-align: left;">${movie.description}</div>
                     </details>
                     <div class="action-buttons">
                         <button 
