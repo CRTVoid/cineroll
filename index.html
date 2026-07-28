@@ -692,7 +692,7 @@
             let ratingHtml = '';
             if (movie.rating && movie.rating !== 'Нет рейтинга') {
             const ratingColor = getRatingColor(movie.rating);
-            ratingHtml = `<span style="background-color: ${ratingColor}; color: #fff; font-weight: 900; padding: 1px 8px; border-radius: 50px; display: inline-block;">${movie.rating}</span>`;
+            ratingHtml = `<span style="background-color: ${ratingColor}; color: #fff; font-weight: 900; padding: 1px 8px 3px 9px; border-radius: 50px; display: inline-block;">${movie.rating}</span>`;
             infoParts.push(`Рейтинг: ${ratingHtml}`);
             }
     
