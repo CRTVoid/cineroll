@@ -509,6 +509,17 @@
         // ВАШ API КЛЮЧ КИНОПОИСКА
         const KINOPOISK_API_KEY = 'f0df9308-4cdb-4195-87c0-42f406c36210';
 
+        // Функция для определения цвета рейтинга
+        function getRatingColor(rating) {
+        const numRating = parseFloat(rating);
+        if (isNaN(numRating)) return '#b3b3b3ff'; // Если рейтинг не число - серый
+    
+        if (numRating < 4.5) return '#dc3545';     // Красный
+        if (numRating < 6.5) return '#b3b3b3ff';   // Серый (используем существующий цвет)
+        if (numRating < 8) return '#75a744ff';     // Зелёный
+        return '#75a744ff';                         // 8+ тоже зелёный
+        }
+
         let db = null;
         let currentRandomMovie = null;
         let lastRandomMovieId = null;
@@ -675,10 +686,17 @@
                 `<img src="${movie.poster}" style="max-width: 120px; border-radius: 8px; margin-bottom: 10px; margin-top: 10px;">` : '';
 
             // Формируем строку с годом, страной и рейтингом
-        let infoParts = [];
-        if (movie.country && movie.country !== 'Не указана') infoParts.push(movie.country);
-        if (movie.year && movie.year !== 'N/A') infoParts.push(movie.year);
-        if (movie.rating && movie.rating !== 'Нет рейтинга') infoParts.push(`Рейтинг: ${movie.rating}`);
+            let infoParts = [];
+            if (movie.country && movie.country !== 'Не указана') infoParts.push(movie.country);
+            if (movie.year && movie.year !== 'N/A') infoParts.push(movie.year);
+    
+            // Рейтинг обрабатываем отдельно с цветом
+            let ratingHtml = '';
+            if (movie.rating && movie.rating !== 'Нет рейтинга') {
+            const ratingColor = getRatingColor(movie.rating);
+            ratingHtml = `<span style="color: ${ratingColor}; font-weight: 900;">${movie.rating}</span>`;
+            infoParts.push(`Рейтинг: ${ratingHtml}`);
+            }
     
     const infoString = infoParts.join(' | ');
             
