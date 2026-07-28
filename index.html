@@ -707,7 +707,7 @@
                     <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title-kinopoisk">${movie.title}</div>
                     <div style="font-size: 0.9em; color: #b3b3b3ff; margin-bottom: 5px;">${infoString}</div>
                     <div style="font-size: 0.8em; color: #b3b3b3ff; margin-bottom: 10px;">${movie.genres}</div>
-                    <details style="font-size: 0.9em; color: #ddd; padding: 0 10px;">
+                    <details style="font-size: 0.9em; color: #ddd; padding: 0 10px; margin-bottom: 25px;">
                     <summary style="list-style: none; border: 1px solid; border-radius: 50px; font-size: 0.9em; color: #ddd; margin-bottom: 15px; padding: 10px;">Описание фильма</summary>
                     <div style="align="justify; font-size: 0.9em; color: #ddd; margin-bottom: 25px; padding: 0 10px;">${movie.description}</div>
                     </details>
@@ -1430,20 +1430,29 @@
             updateCounters();
             
             document.querySelectorAll('.source-option').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.source-option').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    currentSource = this.dataset.source;
-                    
-                    const genreSelector = document.getElementById('genreSelector');
-                    if (currentSource === 'kinopoisk') {
-                        genreSelector.classList.add('visible');
-                    } else {
-                        genreSelector.classList.remove('visible');
-                    }
-                });
-            });
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.source-option').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        currentSource = this.dataset.source;
+        
+        const genreSelector = document.getElementById('genreSelector');
+        const addBtn = document.querySelector('.add-btn');
+        const listBtn = document.getElementById('toggle-list-btn');
+        
+        if (currentSource === 'kinopoisk') {
+            genreSelector.classList.add('visible');
+            // Скрываем кнопки
+            if (addBtn) addBtn.style.display = 'none';
+            if (listBtn) listBtn.style.display = 'none';
+        } else {
+            genreSelector.classList.remove('visible');
+            // Показываем кнопки
+            if (addBtn) addBtn.style.display = '';
+            if (listBtn) listBtn.style.display = '';
+        }
+    });
+});
             
             document.getElementById('random-btn').addEventListener('click', getRandomMovie);
             document.getElementById('toggle-list-btn').addEventListener('click', toggleMovieList);
