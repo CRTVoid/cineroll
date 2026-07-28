@@ -1439,17 +1439,30 @@
         const genreSelector = document.getElementById('genreSelector');
         const addBtn = document.querySelector('.add-btn');
         const listBtn = document.getElementById('toggle-list-btn');
+        const randomBtn = document.getElementById('random-btn');
+        const resultBox = document.querySelector('.result-box');
+        const groupBtn = document.querySelector('.group-btn');
         
         if (currentSource === 'kinopoisk') {
             genreSelector.classList.add('visible');
             // Скрываем кнопки
             if (addBtn) addBtn.style.display = 'none';
             if (listBtn) listBtn.style.display = 'none';
+            // Убираем нижний margin у result-box
+            if (resultBox) resultBox.style.marginBottom = '0';
+            // Раздвигаем btn-big на всю ширину
+            if (randomBtn) randomBtn.style.width = '100%';
+            if (groupBtn) groupBtn.style.gap = '0';
         } else {
             genreSelector.classList.remove('visible');
             // Показываем кнопки
             if (addBtn) addBtn.style.display = '';
             if (listBtn) listBtn.style.display = '';
+            // Возвращаем нижний margin
+            if (resultBox) resultBox.style.marginBottom = '';
+            // Возвращаем btn-big исходную ширину
+            if (randomBtn) randomBtn.style.width = '';
+            if (groupBtn) groupBtn.style.gap = '';
         }
     });
 });
