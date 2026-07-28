@@ -502,7 +502,6 @@
         };
 
         const KINOPOISK_API_KEY = 'f0df9308-4cdb-4195-87c0-42f406c36210';
-        const KINOPOISK_PROXY = 'https://corsproxy.io/?';
 
         let db = null;
         let currentRandomMovie = null;
@@ -525,6 +524,7 @@
             }
         }
 
+        // НОВАЯ ФУНКЦИЯ - используем другой прокси
         async function getRandomFromKinopoisk(genre = '') {
             try {
                 let url = 'https://api.kinopoisk.dev/v1.4/movie/random';
@@ -535,11 +535,11 @@
                 
                 console.log('Запрос к Кинопоиску:', url);
                 
-                const proxyUrl = KINOPOISK_PROXY + encodeURIComponent(url);
+                // Используем другой прокси, который лучше работает с заголовками
+                const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
                 
                 const response = await fetch(proxyUrl, {
                     headers: {
-                        'accept': 'application/json',
                         'X-API-KEY': KINOPOISK_API_KEY
                     }
                 });
