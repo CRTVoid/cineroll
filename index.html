@@ -501,6 +501,9 @@
             appId: "1:158307828214:web:6d8ed57b6d79ed80e247d7"
         };
 
+        // ВАШ API КЛЮЧ КИНОПОИСКА
+        const KINOPOISK_API_KEY = 'f0df9308-4cdb-4195-87c0-42f406c36210';
+
         let db = null;
         let currentRandomMovie = null;
         let lastRandomMovieId = null;
@@ -522,42 +525,61 @@
             }
         }
 
-        // НОВЫЙ ПОДХОД - используем публичный API без ключа
-        // Получаем случайный фильм через бесплатный API
+        // ПРАВИЛЬНАЯ ФУНКЦИЯ С API КЛЮЧОМ
         async function getRandomFromKinopoisk(genre = '') {
             try {
-                // Используем публичный API для поиска фильмов
                 // Генерируем случайный год и страницу
                 const randomYear = Math.floor(Math.random() * (2024 - 1950 + 1)) + 1950;
                 const randomPage = Math.floor(Math.random() * 10) + 1;
                 
-                // Используем бесплатный API без ключа
-                let url = `https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword?keyword=${encodeURIComponent('фильм')}&page=${randomPage}`;
-                
-                // Если выбран жанр, ищем по нему
+                // Формируем ключевое слово для поиска
+                let keyword = 'фильм';
                 if (genre) {
-                    url = `https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword?keyword=${encodeURIComponent(genre)}&page=${randomPage}`;
+                    keyword = genre;
                 }
                 
-                console.log('Запрос к публичному API Кинопоиска:', url);
+                // Добавляем год для разнообразия
+                const searchKeyword = `${keyword} ${randomYear}`;
                 
-                // Прямой запрос без ключа (работает для публичных эндпоинтов)
+                const url = `https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword?keyword=${encodeURIComponent(searchKeyword)}&page=${randomPage}`;
+                
+                console.log('Запрос к API Кинопоиска:', url);
+                
                 const response = await fetch(url, {
                     headers: {
+                        'X-API-KEY': KINOPOISK_API_KEY,
                         'Content-Type': 'application/json'
                     }
                 });
                 
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Неверный API ключ. Проверьте ключ на сайте kinopoiskapiunofficial.tech');
+                    }
                     throw new Error(`API ошибка: ${response.status}`);
                 }
                 
                 const data = await response.json();
                 
+                // Проверяем, есть ли фильмы
                 if (!data.films || data.films.length === 0) {
-                    // Если ничего не нашли, пробуем без жанра
+                    // Если ничего не нашли, пробуем без года
                     if (genre) {
-                        return getRandomFromKinopoisk('');
+                        console.log('Поиск с годом не дал результатов, пробуем без года');
+                        const fallbackUrl = `https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword?keyword=${encodeURIComponent(genre)}&page=${randomPage}`;
+                        const fallbackResponse = await fetch(fallbackUrl, {
+                            headers: {
+                                'X-API-KEY': KINOPOISK_API_KEY,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        if (fallbackResponse.ok) {
+                            const fallbackData = await fallbackResponse.json();
+                            if (fallbackData.films && fallbackData.films.length > 0) {
+                                const film = fallbackData.films[Math.floor(Math.random() * fallbackData.films.length)];
+                                return formatFilmData(film);
+                            }
+                        }
                     }
                     throw new Error('Фильмы не найдены');
                 }
@@ -566,28 +588,31 @@
                 const randomIndex = Math.floor(Math.random() * data.films.length);
                 const film = data.films[randomIndex];
                 
-                // Формируем URL для поиска
-                const title = film.nameRu || film.nameEn || film.nameOriginal || 'Без названия';
-                const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(title)}`;
-                const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(title + ' фильм')}&section=search`;
-                
-                return {
-                    id: film.filmId || Math.random().toString(36).substr(2, 9),
-                    title: title,
-                    year: film.year || 'N/A',
-                    rating: film.rating || 'Нет рейтинга',
-                    genres: film.genres?.map(g => g.genre).join(', ') || 'Не указаны',
-                    description: film.description || 'Описание отсутствует',
-                    poster: film.posterUrl || film.posterUrlPreview || '',
-                    kinopoiskUrl: kinopoiskUrl,
-                    vkSearchUrl: vkSearchUrl,
-                    fromKinopoisk: true
-                };
+                return formatFilmData(film);
                 
             } catch (error) {
                 console.error('Ошибка получения фильма из Кинопоиска:', error);
                 return null;
             }
+        }
+
+        function formatFilmData(film) {
+            const title = film.nameRu || film.nameEn || film.nameOriginal || 'Без названия';
+            const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(title)}`;
+            const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(title + ' фильм')}&section=search`;
+            
+            return {
+                id: film.filmId || Math.random().toString(36).substr(2, 9),
+                title: title,
+                year: film.year || 'N/A',
+                rating: film.rating || 'Нет рейтинга',
+                genres: film.genres?.map(g => g.genre).join(', ') || 'Не указаны',
+                description: film.description || 'Описание отсутствует',
+                poster: film.posterUrl || film.posterUrlPreview || '',
+                kinopoiskUrl: kinopoiskUrl,
+                vkSearchUrl: vkSearchUrl,
+                fromKinopoisk: true
+            };
         }
 
         async function getRandomMovie() {
