@@ -132,6 +132,12 @@
             margin-bottom: 20px;
             font-weight: 900;
         }
+        .movie-title-kinopoisk {
+            font-size: 2.3em;
+            color: #fffaffff;
+            padding: 10px;
+            font-weight: 900;
+        }
         .loading {
             color: #fffaffff;
             font-size: 1.2em;
@@ -664,10 +670,10 @@
             resultDiv.innerHTML = `
                 <div style="animation: fadeIn 0.5s;">
                     ${posterHtml}
-                    <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${movie.title}</div>
+                    <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title-kinopoisk">${movie.title}</div>
                     <div style="font-size: 0.9em; color: #b3b3b3ff; margin-bottom: 5px;">${movie.year} | Рейтинг: ${movie.rating}</div>
                     <div style="font-size: 0.8em; color: #b3b3b3ff; margin-bottom: 10px;">${movie.genres}</div>
-                    <div style="font-size: 0.9em; color: #ddd; margin-bottom: 15px; padding: 0 10px;">${movie.description}</div>
+                    <div style="font-size: 0.9em; color: #ddd; margin-bottom: 25px; padding: 0 10px;">${movie.description}</div>
                     <div class="action-buttons">
                         <button 
                            onclick="window.open('${movie.kinopoiskUrl}', '_blank')"
