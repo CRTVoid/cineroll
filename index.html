@@ -524,7 +524,7 @@
             }
         }
 
-        // НОВАЯ ФУНКЦИЯ - используем другой прокси
+        // ПРОБУЕМ 4 РАЗНЫХ ПРОКСИ
         async function getRandomFromKinopoisk(genre = '') {
             try {
                 let url = 'https://api.kinopoisk.dev/v1.4/movie/random';
@@ -535,45 +535,86 @@
                 
                 console.log('Запрос к Кинопоиску:', url);
                 
-                // Используем другой прокси, который лучше работает с заголовками
-                const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-                
-                const response = await fetch(proxyUrl, {
-                    headers: {
-                        'X-API-KEY': KINOPOISK_API_KEY
+                // Список прокси для тестирования
+                const proxies = [
+                    // Вариант 1: через все origins с параметром
+                    async () => {
+                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                        const response = await fetch(proxyUrl, {
+                            headers: { 'X-API-KEY': KINOPOISK_API_KEY }
+                        });
+                        return response;
+                    },
+                    // Вариант 2: через corsproxy.io
+                    async () => {
+                        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+                        const response = await fetch(proxyUrl, {
+                            headers: { 'X-API-KEY': KINOPOISK_API_KEY }
+                        });
+                        return response;
+                    },
+                    // Вариант 3: через thingproxy (без заголовков)
+                    async () => {
+                        const proxyUrl = `https://thingproxy.freeboard.io/fetch/${url}`;
+                        const response = await fetch(proxyUrl, {
+                            headers: { 'X-API-KEY': KINOPOISK_API_KEY }
+                        });
+                        return response;
+                    },
+                    // Вариант 4: через cors-anywhere (может быть ограничение)
+                    async () => {
+                        const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+                        const response = await fetch(proxyUrl, {
+                            headers: { 'X-API-KEY': KINOPOISK_API_KEY }
+                        });
+                        return response;
                     }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`API ошибка: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (!data || !data.id) {
-                    if (genre) {
-                        console.log('Фильм с жанром не найден, пробуем без жанра');
-                        return getRandomFromKinopoisk('');
+                ];
+
+                // Пробуем каждый прокси по очереди
+                for (let i = 0; i < proxies.length; i++) {
+                    try {
+                        console.log(`Пробуем прокси ${i + 1}...`);
+                        const response = await proxies[i]();
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log(`Прокси ${i + 1} сработал!`);
+                            
+                            if (!data || !data.id) {
+                                if (genre) {
+                                    return getRandomFromKinopoisk('');
+                                }
+                                throw new Error('Фильм не найден');
+                            }
+                            
+                            const title = data.name || data.alternativeName || 'Без названия';
+                            const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(title)}`;
+                            const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(title + ' фильм')}&section=search`;
+                            
+                            return {
+                                id: data.id,
+                                title: title,
+                                year: data.year || 'N/A',
+                                rating: data.rating?.kp || data.rating?.imdb || 'Нет рейтинга',
+                                genres: data.genres?.map(g => g.name).join(', ') || 'Не указаны',
+                                description: data.description || data.shortDescription || 'Описание отсутствует',
+                                poster: data.poster?.url || '',
+                                kinopoiskUrl: kinopoiskUrl,
+                                vkSearchUrl: vkSearchUrl,
+                                fromKinopoisk: true
+                            };
+                        } else {
+                            console.log(`Прокси ${i + 1} вернул статус: ${response.status}`);
+                        }
+                    } catch (e) {
+                        console.log(`Прокси ${i + 1} не сработал:`, e.message);
                     }
-                    throw new Error('Фильм не найден');
                 }
+
+                // Если все прокси не сработали
+                throw new Error('Все прокси не сработали');
                 
-                const title = data.name || data.alternativeName || 'Без названия';
-                const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(title)}`;
-                const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(title + ' фильм')}&section=search`;
-                
-                return {
-                    id: data.id,
-                    title: title,
-                    year: data.year || 'N/A',
-                    rating: data.rating?.kp || data.rating?.imdb || 'Нет рейтинга',
-                    genres: data.genres?.map(g => g.name).join(', ') || 'Не указаны',
-                    description: data.description || data.shortDescription || 'Описание отсутствует',
-                    poster: data.poster?.url || '',
-                    kinopoiskUrl: kinopoiskUrl,
-                    vkSearchUrl: vkSearchUrl,
-                    fromKinopoisk: true
-                };
             } catch (error) {
                 console.error('Ошибка получения фильма из Кинопоиска:', error);
                 return null;
@@ -598,7 +639,7 @@
                         resultDiv.innerHTML = `
                             <div style="color: #ff6b6b; padding: 30px;">
                                 <h3 style="color: #ff6b6b;">Не удалось найти фильм</h3>
-                                <p style="color: #b3b3b3ff;">Попробуйте выбрать другой жанр или повторить запрос</p>
+                                <p style="color: #b3b3b3ff;">Все прокси не сработали. Попробуйте позже.</p>
                                 <button onclick="getRandomMovie()" style="margin-top: 15px; padding: 10px 30px; border-radius: 50px; border: none; background: #75a744ff; color: #1a1a1aff; font-family: Nunito; font-weight: 700; cursor: pointer;">
                                     Попробовать снова
                                 </button>
