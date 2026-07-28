@@ -605,12 +605,19 @@
             const title = film.nameRu || film.nameEn || film.nameOriginal || 'Без названия';
             const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(title)}`;
             const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(title + ' фильм')}&section=search`;
+
+            // Получаем страну из данных
+            let country = 'Не указана';
+            if (film.countries && film.countries.length > 0) {
+                country = film.countries.map(c => c.country).join(', ');
+            }
             
             return {
                 id: film.filmId || Math.random().toString(36).substr(2, 9),
                 title: title,
                 year: film.year || 'N/A',
                 rating: film.rating || 'Нет рейтинга',
+                country: country,
                 genres: film.genres?.map(g => g.genre).join(', ') || 'Не указаны',
                 description: film.description || 'Описание отсутствует',
                 poster: film.posterUrl || film.posterUrlPreview || '',
@@ -666,12 +673,20 @@
             
             let posterHtml = movie.poster ? 
                 `<img src="${movie.poster}" style="max-width: 120px; border-radius: 8px; margin-bottom: 10px; margin-top: 10px;">` : '';
+
+            // Формируем строку с годом, страной и рейтингом
+        let infoParts = [];
+        if (movie.country && movie.country !== 'Не указана') infoParts.push(movie.country);
+        if (movie.year && movie.year !== 'N/A') infoParts.push(movie.year);
+        if (movie.rating && movie.rating !== 'Нет рейтинга') infoParts.push(`Рейтинг: ${movie.rating}`);
+    
+    const infoString = infoParts.join(' | ');
             
             resultDiv.innerHTML = `
                 <div style="animation: fadeIn 0.5s;">
                     ${posterHtml}
                     <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title-kinopoisk">${movie.title}</div>
-                    <div style="font-size: 0.9em; color: #b3b3b3ff; margin-bottom: 5px;">${movie.year} | Рейтинг: ${movie.rating}</div>
+                    <div style="font-size: 0.9em; color: #b3b3b3ff; margin-bottom: 5px;">${infoString}</div>
                     <div style="font-size: 0.8em; color: #b3b3b3ff; margin-bottom: 10px;">${movie.genres}</div>
                     <div style="font-size: 0.9em; color: #ddd; margin-bottom: 25px; padding: 0 10px;">${movie.description}</div>
                     <div class="action-buttons">
