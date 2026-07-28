@@ -684,7 +684,7 @@
             const resultDiv = document.getElementById('result');
             
             let posterHtml = movie.poster ? 
-                `<img src="${movie.poster}" style="max-width: 120px; border-radius: 8px; margin-bottom: 10px; margin-top: 25px;">` : '';
+                `<img src="${movie.poster}" style="max-width: 120px; border-radius: 8px; margin-bottom: 10px; margin-top: 20px;">` : '';
 
             // Формируем строку с годом, страной и рейтингом
             let infoParts = [];
@@ -708,7 +708,7 @@
                     <div style="font-size: 0.9em; color: #b3b3b3ff; margin-bottom: 5px;">${infoString}</div>
                     <div style="font-size: 0.8em; color: #b3b3b3ff; margin-bottom: 10px;">${movie.genres}</div>
                     <details style="font-size: 0.9em; color: #ddd; padding: 0 10px; margin-bottom: 25px;">
-                    <summary style="list-style: none; border: 1px solid; border-radius: 50px; font-size: 0.9em; color: #ddd; margin-bottom: 15px; padding: 10px;">Описание фильма</summary>
+                    <summary style="list-style: none; border: 1px solid; border-radius: 50px; font-size: 0.9em; color: #ddd; margin-bottom: 15px; padding: 10px;"><span>Описание фильма</span></summary>
                     <div style="align="justify; font-size: 0.9em; color: #ddd; margin-bottom: 25px; padding: 0 10px;">${movie.description}</div>
                     </details>
                     <div class="action-buttons">
