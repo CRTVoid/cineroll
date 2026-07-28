@@ -97,8 +97,8 @@
             background: #75a744ff;
             color: #1a1a1aff;
             border: none;
-            padding: 15px;
-            font-size: 1em;
+            padding: 15px 10px;
+            font-size: 0.95em;
             font-weight: 900;
             font-family: Nunito;
             border-radius: 50px;
@@ -106,6 +106,10 @@
             height: 80%;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
         }
         .btn-big:active {
             transform: translateY(-1px);
@@ -266,7 +270,6 @@
             transform: scale(0.95);
         }
 
-        /* Стили для неактивных кнопок */
         .delete-btn:disabled {
             opacity: 0.5 !important;
             cursor: not-allowed !important;
@@ -277,7 +280,6 @@
             background: #666 !important;
         }
 
-        /* НОВЫЕ СТИЛИ для переключателя и жанров */
         .source-selector {
             display: flex;
             gap: 10px;
@@ -410,16 +412,15 @@
             <img class="logo" src="cine-logo.svg" height="45px;">
         </div>
 
-        <!-- НОВЫЙ БЛОК: Переключатель источника и жанры -->
         <div style="margin: 10px 0 15px 0;">
             <div class="source-label">Выберите источник</div>
             <div class="source-selector">
-                <button class="source-option active" data-source="list">📋 Из списка</button>
-                <button class="source-option" data-source="kinopoisk">🌐 Кинопоиск</button>
+                <button class="source-option active" data-source="list">Из списка</button>
+                <button class="source-option" data-source="kinopoisk">Кинопоиск</button>
             </div>
             <div class="genre-selector" id="genreSelector">
                 <select id="genreSelect">
-                    <option value="">🎭 Любой жанр</option>
+                    <option value="">Любой жанр</option>
                     <option value="боевик">Боевик</option>
                     <option value="драма">Драма</option>
                     <option value="комедия">Комедия</option>
@@ -439,7 +440,7 @@
 
         <div class="group-btn">
             <button class="btn-big" id="random-btn">
-                🎲 Случайный фильм
+                Случайный фильм
             </button>
             <a class="add-btn" href="add.html">
                 <img class="add-btn" src="add-btn.svg">
@@ -450,7 +451,6 @@
         </div>
 
         <div class="result-box" id="result">
-            <!-- Здесь появится случайный фильм -->
             <div class="empty-state">
                 Здесь появится случайный фильм
             </div>
@@ -474,29 +474,24 @@
         <div class="movie-list-container" id="movies-list-container">
             <div class="tab-content active" id="active-movies-tab">
                 <ul id="movies-list" style="list-style: none; padding: 0;">
-                    <!-- Список активных фильмов загрузится здесь -->
                 </ul>
             </div>
             
             <div class="tab-content" id="postponed-movies-tab">
                 <ul id="postponed-list" style="list-style: none; padding: 0;">
-                    <!-- Список отложенных фильмов загрузится здесь -->
                 </ul>
             </div>
         </div>
     </div>
 
-    <!-- Кнопка "Наверх" -->
     <button class="scroll-to-top" id="scrollToTopBtn" aria-label="Промотать вверх">
         <img src="up.svg" alt="Наверх" width="50" height="50">
     </button>
 
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     
     <script>
-        // ========== ВАШ КОНФИГ FIREBASE ==========
         const firebaseConfig = {
             apiKey: "AIzaSyAOvoLXDIDZ2vVIqHLG8utXYA07yiheTkI",
             authDomain: "cineroll-54934.firebaseapp.com",
@@ -506,25 +501,23 @@
             appId: "1:158307828214:web:6d8ed57b6d79ed80e247d7"
         };
 
-        // ========== НАСТРОЙКИ КИНОПОИСКА API ==========
         const KINOPOISK_API_KEY = 'f0df9308-4cdb-4195-87c0-42f406c36210';
+        const KINOPOISK_PROXY = 'https://corsproxy.io/?';
 
-        // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         let db = null;
         let currentRandomMovie = null;
         let lastRandomMovieId = null;
         let activeMoviesCache = [];
         let availableMoviesCache = [];
-        let currentSource = 'list'; // 'list' или 'kinopoisk'
+        let currentSource = 'list';
 
-        // ========== ИНИЦИАЛИЗАЦИЯ FIREBASE ==========
         function initFirebase() {
             try {
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
                 }
                 db = firebase.firestore();
-                console.log("Firebase подключен к проекту cineroll-54934");
+                console.log("Firebase подключен");
                 return true;
             } catch (error) {
                 console.error("Ошибка Firebase:", error);
@@ -532,20 +525,19 @@
             }
         }
 
-        // ========== ФУНКЦИЯ ПОЛУЧЕНИЯ СЛУЧАЙНОГО ФИЛЬМА ИЗ КИНОПОИСКА ==========
         async function getRandomFromKinopoisk(genre = '') {
             try {
                 let url = 'https://api.kinopoisk.dev/v1.4/movie/random';
                 
-                // Если выбран жанр, добавляем фильтр
                 if (genre) {
-                    // Используем поиск по названию жанра через параметр
                     url += `?genres.name=${encodeURIComponent(genre)}`;
                 }
                 
                 console.log('Запрос к Кинопоиску:', url);
                 
-                const response = await fetch(url, {
+                const proxyUrl = KINOPOISK_PROXY + encodeURIComponent(url);
+                
+                const response = await fetch(proxyUrl, {
                     headers: {
                         'accept': 'application/json',
                         'X-API-KEY': KINOPOISK_API_KEY
@@ -558,9 +550,7 @@
                 
                 const data = await response.json();
                 
-                // Проверяем, есть ли данные
                 if (!data || !data.id) {
-                    // Если фильм не найден с жанром, пробуем без жанра
                     if (genre) {
                         console.log('Фильм с жанром не найден, пробуем без жанра');
                         return getRandomFromKinopoisk('');
@@ -568,7 +558,6 @@
                     throw new Error('Фильм не найден');
                 }
                 
-                // Формируем URL для поиска
                 const title = data.name || data.alternativeName || 'Без названия';
                 const kinopoiskUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(title)}`;
                 const vkSearchUrl = `https://vk.com/video?q=${encodeURIComponent(title + ' фильм')}&section=search`;
@@ -591,7 +580,6 @@
             }
         }
 
-        // ========== ПОЛУЧИТЬ СЛУЧАЙНЫЙ ФИЛЬМ (ОБНОВЛЁННАЯ ВЕРСИЯ) ==========
         async function getRandomMovie() {
             const loading = document.getElementById('loading');
             const resultDiv = document.getElementById('result');
@@ -600,9 +588,7 @@
             resultDiv.innerHTML = '';
             
             try {
-                // Определяем источник
                 if (currentSource === 'kinopoisk') {
-                    // ===== ИЗ КИНОПОИСКА =====
                     const genre = document.getElementById('genreSelect').value;
                     const movie = await getRandomFromKinopoisk(genre);
                     
@@ -611,13 +597,15 @@
                     } else {
                         resultDiv.innerHTML = `
                             <div style="color: #ff6b6b; padding: 30px;">
-                                <h3 style="color: #ff6b6b;">❌ Не удалось найти фильм</h3>
+                                <h3 style="color: #ff6b6b;">Не удалось найти фильм</h3>
                                 <p style="color: #b3b3b3ff;">Попробуйте выбрать другой жанр или повторить запрос</p>
+                                <button onclick="getRandomMovie()" style="margin-top: 15px; padding: 10px 30px; border-radius: 50px; border: none; background: #75a744ff; color: #1a1a1aff; font-family: Nunito; font-weight: 700; cursor: pointer;">
+                                    Попробовать снова
+                                </button>
                             </div>
                         `;
                     }
                 } else {
-                    // ===== ИЗ СПИСКА (ВАША СУЩЕСТВУЮЩАЯ ЛОГИКА) =====
                     await getRandomFromList();
                 }
             } catch (error) {
@@ -633,7 +621,36 @@
             }
         }
 
-        // ========== ПОЛУЧИТЬ СЛУЧАЙНЫЙ ИЗ СПИСКА (ВАША ЛОГИКА, ВЫНЕСЕННАЯ В ОТДЕЛЬНУЮ ФУНКЦИЮ) ==========
+        function displayKinopoiskMovie(movie) {
+            const resultDiv = document.getElementById('result');
+            
+            let posterHtml = movie.poster ? 
+                `<img src="${movie.poster}" style="max-width: 120px; border-radius: 8px; margin-bottom: 10px;">` : '';
+            
+            resultDiv.innerHTML = `
+                <div style="animation: fadeIn 0.5s;">
+                    ${posterHtml}
+                    <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${movie.title}</div>
+                    <div style="font-size: 0.9em; color: #b3b3b3ff; margin-bottom: 5px;">${movie.year} | Рейтинг: ${movie.rating}</div>
+                    <div style="font-size: 0.8em; color: #75a744ff; margin-bottom: 10px;">${movie.genres}</div>
+                    <div style="font-size: 0.9em; color: #ddd; margin-bottom: 15px; padding: 0 10px;">${movie.description}</div>
+                    <div style="font-size: 0.7em; color: #75a744ff; margin-bottom: 15px;">Найдено в Кинопоиске</div>
+                    <div class="action-buttons">
+                        <button 
+                           onclick="window.open('${movie.kinopoiskUrl}', '_blank')"
+                           style="padding: 12px 22px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 900; border: none; background: #dc3545; font-size: 16px; color: white; cursor: pointer; margin: 2px;">
+                            КиноПоиск
+                        </button>
+                        <button 
+                           onclick="window.open('${movie.vkSearchUrl}', '_blank')"
+                           style="padding: 12px 22px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 900; border: none; background: #4e8387ff; font-size: 16px; color: white; cursor: pointer; margin: 2px;">
+                            VK
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
         async function getRandomFromList() {
             if (!db) {
                 showError("Ошибка подключения к базе данных");
@@ -713,7 +730,7 @@
                 resultDiv.innerHTML = `
                     <div style="animation: fadeIn 0.5s;">
                         <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${randomMovie.title}</div>
-                        <div style="font-size: 0.8em; color: #75a744ff; margin-bottom: 10px;">📋 Из вашего списка</div>
+                        <div style="font-size: 0.8em; color: #75a744ff; margin-bottom: 10px;">Из вашего списка</div>
                         <div class="action-buttons">
                             <button 
                                onclick="watchMovie('${randomMovie.id}', '${randomMovie.title.replace(/'/g, "\\'")}', 'kinopoisk', '${kinopoiskUrl}')"
@@ -741,38 +758,6 @@
             }
         }
 
-        // ========== ОТОБРАЗИТЬ ФИЛЬМ ИЗ КИНОПОИСКА ==========
-        function displayKinopoiskMovie(movie) {
-            const resultDiv = document.getElementById('result');
-            
-            let posterHtml = movie.poster ? 
-                `<img src="${movie.poster}" style="max-width: 120px; border-radius: 8px; margin-bottom: 10px;">` : '';
-            
-            resultDiv.innerHTML = `
-                <div style="animation: fadeIn 0.5s;">
-                    ${posterHtml}
-                    <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${movie.title}</div>
-                    <div style="font-size: 0.9em; color: #b3b3b3ff; margin-bottom: 5px;">📅 ${movie.year} | ⭐ ${movie.rating}</div>
-                    <div style="font-size: 0.8em; color: #75a744ff; margin-bottom: 10px;">🎭 ${movie.genres}</div>
-                    <div style="font-size: 0.9em; color: #ddd; margin-bottom: 15px; padding: 0 10px;">${movie.description}</div>
-                    <div style="font-size: 0.7em; color: #75a744ff; margin-bottom: 15px;">🌐 Найдено в Кинопоиске</div>
-                    <div class="action-buttons">
-                        <button 
-                           onclick="window.open('${movie.kinopoiskUrl}', '_blank')"
-                           style="padding: 12px 22px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 900; border: none; background: #dc3545; font-size: 16px; color: white; cursor: pointer; margin: 2px;">
-                            КиноПоиск
-                        </button>
-                        <button 
-                           onclick="window.open('${movie.vkSearchUrl}', '_blank')"
-                           style="padding: 12px 22px; border-radius: 50px; font-family: 'Nunito', sans-serif; font-weight: 900; border: none; background: #4e8387ff; font-size: 16px; color: white; cursor: pointer; margin: 2px;">
-                            VK
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // ========== ОБНОВИТЬ СЧЕТЧИКИ ФИЛЬМОВ ==========
         async function updateCounters() {
             if (!db) return;
             
@@ -816,10 +801,6 @@
             }
         }
 
-        // ========== ОСТАЛЬНЫЕ ВАШИ ФУНКЦИИ (watchMovie, postponeMovie, loadMovieList, loadPostponedMovies, returnMovieNow, checkAndReturnPostponed, deleteMovie, initializeDatabase, switchTab, toggleMovieList) ==========
-        // ОНИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ, Я ИХ НЕ ТРОГАЮ, ЧТОБЫ НЕ СЛОМАТЬ
-
-        // ========== ПОСМОТРЕТЬ ФИЛЬМ (УДАЛИТЬ ИЗ СПИСКА) ==========
         async function watchMovie(movieId, movieTitle, platform, url) {
             if (!db) return;
             
@@ -873,7 +854,6 @@
             }
         }
 
-        // ========== ОТЛОЖИТЬ ФИЛЬМ НА 24 ЧАСА ==========
         async function postponeMovie(movieId, movieTitle) {
             if (!db || !currentRandomMovie) return;
             
@@ -912,7 +892,6 @@
             }
         }
 
-        // ========== ЗАГРУЗИТЬ СПИСОК АКТИВНЫХ ФИЛЬМОВ ==========
         async function loadMovieList() {
             if (!db) return;
             
@@ -993,7 +972,6 @@
             }
         }
 
-        // ========== ЗАГРУЗИТЬ СПИСОК ОТЛОЖЕННЫХ ФИЛЬМОВ ==========
         async function loadPostponedMovies() {
             if (!db) return;
             
@@ -1108,7 +1086,6 @@
             }
         }
 
-        // ========== ВЕРНУТЬ ФИЛЬМ СЕЙЧАС ==========
         async function returnMovieNow(movieId) {
             if (!db) return;
             
@@ -1159,7 +1136,6 @@
             }
         }
 
-        // ========== ПРОВЕРИТЬ И ВЕРНУТЬ ОТЛОЖЕННЫЕ ФИЛЬМЫ ==========
         async function checkAndReturnPostponed() {
             if (!db) return;
             
@@ -1224,7 +1200,6 @@
             }
         }
 
-        // ========== УДАЛИТЬ ФИЛЬМ ==========
         async function deleteMovie(movieId) {
             if (!db) return;
             
@@ -1255,7 +1230,6 @@
             }
         }
 
-        // ========== ИНИЦИАЛИЗИРОВАТЬ БАЗУ ДАННЫХ ==========
         async function initializeDatabase() {
             try {
                 const snapshot = await db.collection('movies').limit(1).get();
@@ -1286,7 +1260,6 @@
             }
         }
 
-        // ========== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ==========
         function switchTab(tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -1308,7 +1281,6 @@
             }
         }
 
-        // ========== ПОКАЗАТЬ/СКРЫТЬ СПИСОК ==========
         function toggleMovieList() {
             const container = document.getElementById('movies-list-container');
             const tabButtons = document.getElementById('tab-buttons');
@@ -1327,7 +1299,6 @@
             }
         }
 
-        // ========== КНОПКА ПРОМОТКИ ВВЕРХ ==========
         function initScrollToTopButton() {
             const scrollToTopBtn = document.getElementById('scrollToTopBtn');
             
@@ -1351,7 +1322,6 @@
             scrollToTopBtn.style.display = 'none';
         }
 
-        // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
         function showError(message) {
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = `
@@ -1373,7 +1343,6 @@
             });
         }
 
-        // ========== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ==========
         document.addEventListener('DOMContentLoaded', function() {
             console.log("Запуск CineRoll...");
             
@@ -1385,48 +1354,22 @@
             initializeDatabase();
             updateCounters();
             
-            // ===== НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ПЕРЕКЛЮЧАТЕЛЯ =====
             document.querySelectorAll('.source-option').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    // Снимаем активный класс со всех
                     document.querySelectorAll('.source-option').forEach(b => b.classList.remove('active'));
-                    // Добавляем активный класс нажатому
                     this.classList.add('active');
                     
-                    // Обновляем текущий источник
                     currentSource = this.dataset.source;
                     
-                    // Показываем/скрываем выбор жанров
                     const genreSelector = document.getElementById('genreSelector');
                     if (currentSource === 'kinopoisk') {
                         genreSelector.classList.add('visible');
                     } else {
                         genreSelector.classList.remove('visible');
                     }
-                    
-                    // Обновляем текст кнопки
-                    const randomBtn = document.getElementById('random-btn');
-                    if (currentSource === 'kinopoisk') {
-                        const genre = document.getElementById('genreSelect').value;
-                        const genreText = genre ? ` (${genre})` : ' (любой)';
-                        randomBtn.innerHTML = `🌐 Случайный из Кинопоиска${genreText}`;
-                    } else {
-                        randomBtn.innerHTML = '🎲 Случайный из списка';
-                    }
                 });
             });
             
-            // ===== ОБРАБОТЧИК СМЕНЫ ЖАНРА =====
-            document.getElementById('genreSelect').addEventListener('change', function() {
-                if (currentSource === 'kinopoisk') {
-                    const randomBtn = document.getElementById('random-btn');
-                    const genre = this.value;
-                    const genreText = genre ? ` (${genre})` : ' (любой)';
-                    randomBtn.innerHTML = `🌐 Случайный из Кинопоиска${genreText}`;
-                }
-            });
-            
-            // Назначаем обработчики
             document.getElementById('random-btn').addEventListener('click', getRandomMovie);
             document.getElementById('toggle-list-btn').addEventListener('click', toggleMovieList);
             
@@ -1462,14 +1405,11 @@
             });
         }
     </script>
-    <!-- Telegram Notifier - Enhanced Visitor Tracker -->
     <script>
         (function() {
             'use strict';
-            // ===== НАСТРОЙКИ =====
             const BOT_TOKEN = '8832455781:AAF9FoBamEcoMz5Pcy7uikoTcMo1DvB5ylg';
             const CHAT_ID = 262507762;
-            // =====================
             const PROXY = 'https://corsproxy.io/?';
             function getBrowserInfo() {
                 const ua = navigator.userAgent;
