@@ -739,12 +739,9 @@
                     <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title-kinopoisk">${movie.title}</div>
                     <div style="font-size: 0.9em; color: #b3b3b3ff; margin-bottom: 5px;">${infoString}</div>
                     <div style="font-size: 0.8em; color: #b3b3b3ff; margin-bottom: 10px;">${movie.genres}</div>
-                    ${movie.description && movie.description !== 'Описание отсутствует' ? `
-<details class="description-spoiler">
-    <summary>Описание</summary>
-    <div class="description-text">${movie.description}</div>
-</details>
-` : ''}
+                    <details>
+                    <div style="font-size: 0.9em; color: #ddd; margin-bottom: 15px; padding: 0 10px;">${movie.description}</div>
+                    </details>
                     <div class="action-buttons">
                         <button 
                            onclick="window.open('${movie.kinopoiskUrl}', '_blank')"
