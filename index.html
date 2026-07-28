@@ -660,16 +660,15 @@
             const resultDiv = document.getElementById('result');
             
             let posterHtml = movie.poster ? 
-                `<img src="${movie.poster}" style="max-width: 120px; border-radius: 8px; margin-bottom: 10px;">` : '';
+                `<img src="${movie.poster}" style="max-width: 120px; border-radius: 8px; margin-bottom: 10px; margin-top: 10px;">` : '';
             
             resultDiv.innerHTML = `
                 <div style="animation: fadeIn 0.5s;">
                     ${posterHtml}
                     <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${movie.title}</div>
                     <div style="font-size: 0.9em; color: #b3b3b3ff; margin-bottom: 5px;">${movie.year} | Рейтинг: ${movie.rating}</div>
-                    <div style="font-size: 0.8em; color: #75a744ff; margin-bottom: 10px;">${movie.genres}</div>
+                    <div style="font-size: 0.8em; color: #b3b3b3ff; margin-bottom: 10px;">${movie.genres}</div>
                     <div style="font-size: 0.9em; color: #ddd; margin-bottom: 15px; padding: 0 10px;">${movie.description}</div>
-                    <div style="font-size: 0.7em; color: #75a744ff; margin-bottom: 15px;">Найдено в Кинопоиске</div>
                     <div class="action-buttons">
                         <button 
                            onclick="window.open('${movie.kinopoiskUrl}', '_blank')"
@@ -765,7 +764,6 @@
                 resultDiv.innerHTML = `
                     <div style="animation: fadeIn 0.5s;">
                         <div style="font-family: Nunito; font-weight: 900; font-size: 2.2em;" class="movie-title">${randomMovie.title}</div>
-                        <div style="font-size: 0.8em; color: #75a744ff; margin-bottom: 10px;">Из вашего списка</div>
                         <div class="action-buttons">
                             <button 
                                onclick="watchMovie('${randomMovie.id}', '${randomMovie.title.replace(/'/g, "\\'")}', 'kinopoisk', '${kinopoiskUrl}')"
